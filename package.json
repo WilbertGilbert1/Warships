@@ -1,0 +1,25 @@
+{
+  "name": "warships",
+  "version": "1.0.0",
+  "description": "Warships Zarytov 6 of December 67",
+  "main": "Js.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WilbertGilbert1/Warships.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/WilbertGilbert1/Warships/issues"
+  },
+  "homepage": "https://github.com/WilbertGilbert1/Warships#readme",
+  "dependencies": {
+    "three": "^0.182.0",
+    "vite": "^7.2.7"
+  }
+}
