@@ -2,7 +2,7 @@
   "name": "warships",
   "version": "1.0.0",
   "description": "Warships Zarytov 6 of December 67",
-  "main": "Js.js",
+  "main": "script.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build"
