@@ -1,7 +1,7 @@
 import Experience from '../Experience.js'
 import * as THREE from 'three'
 import GUI from 'lil-gui'
-import Ship from './Ship .js'
+import Ship from './Ship.js'
 import Ocean from './Ocean.js'
 
 const debugObject = {}

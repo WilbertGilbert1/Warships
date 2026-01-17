@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./style.css">
+    <script type="importmap">
+        {
+           "imports": {
+                "three": "./node_modules/three/build/three.module.js",
+                "three/addons/": "./node_modules/three/examples/jsm/",
+                "lil-gui": "./node_modules/lil-gui/dist/lil-gui.esm.min.js",
+                "socket.io-client": "./node_modules/socket.io-client/dist/socket.io.esm.min.js"
+            }
+        }
+    </script>
+    <title>Warships</title>
+</head>
+<body>
+    <canvas class = "webgl"></canvas>
+    <script type="module" src="./script.js"></script>
+</body>
+</html>

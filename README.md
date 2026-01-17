@@ -1,2 +1,6 @@
 # Warships
-Warships Zarytov 6 of December 67
+
+git clone
+run `npm install`
+to launch server `node Server/server.js`
+or better `npx nodemon Server/server.js`
