@@ -1,6 +1,6 @@
 # Warships
 
-git clone
-run `npm install`
-to launch server `node Server/server.js`
-or better `npx nodemon Server/server.js`
+git clone <br>
+run `npm install` <br>
+to launch server `node Server/server.js` <br>
+or better `npx nodemon Server/server.js` <br>

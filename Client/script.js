@@ -3,6 +3,10 @@ import { io } from 'socket.io-client'
 
 const experience = new Experience(document.querySelector('canvas.webgl'))
 
+//THIS IS AN EXAMPLE, MAKE IT IN A DIFF FILE
+//Somehting like this.socket = io('http://localhost:3000') in your singleton
+
+
 const socket = io('http://localhost:3000')
 
 socket.on('connect', () => {
