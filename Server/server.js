@@ -4,6 +4,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import mime from 'mime'
 
+
 var cache = {}
 
 const httpPort = 3000
@@ -81,22 +82,67 @@ const serveStatic = (response, cache, absPath) => {
 
 //PUT THIS STUFF IN A DIFFERENT FILE
 
-const setup = () => {
-    io.on('connection', (socket) => {
-        console.log('a user connected')
-
-        // socket.emit(
-        //     // Emit something
-        // )
-
-        socket.on('test', (message) => {
-            console.log(message)
-        })
-
-        socket.on('disconnect', () => {
-            // Handle disconnect
-        })
-    })
+class PlayerInfo
+{
+    constructor(id)
+    {
+        this.id = id
+        this.keys = 
+        {
+            w: false,
+            a: false,
+            s: false,
+            d: false,
+        }
+    }
 }
 
-setup()
+let players = {}
+
+
+io.on('connection', (socket) => {
+    players[socket.id] = new PlayerInfo(socket.id)
+
+    socket.on('keydown', (obj) =>
+    {
+        console.log(obj)
+        if(obj == 'w') players[socket.id].keys.w = true
+        if(obj == 's') players[socket.id].keys.s = true
+        if(obj == 'a') players[socket.id].keys.a = true
+        if(obj == 'd') players[socket.id].keys.d = true
+    })
+    socket.on('keyup', (obj) =>
+    {
+        console.log(obj)
+        if(obj == 'w') players[socket.id].keys.w = false
+        if(obj == 's') players[socket.id].keys.s = false
+        if(obj == 'a') players[socket.id].keys.a = false
+        if(obj == 'd') players[socket.id].keys.d = false
+    })
+
+
+    // socket.emit(
+    //     // Emit something
+    // )
+
+    socket.on('test', (message) => {
+        console.log(message)
+    })
+
+    socket.on('disconnect', () => {
+        delete players[socket.id]
+    })
+})
+
+const serverTick = () =>
+    {
+        for(const id in players)
+        {
+            if(players[id].keys.w) console.log('w')
+            if(players[id].keys.s) console.log('s')
+            if(players[id].keys.a) console.log('a')
+            if(players[id].keys.d) console.log('d')
+        }
+    }
+setInterval(serverTick, 15)
+

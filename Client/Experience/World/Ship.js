@@ -7,6 +7,7 @@ export default class Ship
     {
         this.experience = new Experience()
         this.world = this.experience.world
+        this.socket = this.experience.socket
 
         this.hp = ''
         this.speed = new THREE.Vector2()
@@ -19,42 +20,17 @@ export default class Ship
         )
         this.ship.position.y += 0.25
 
+
         //Camera Test
         window.addEventListener('keydown', (event)=>
         {
-            if(event.key == 'w')
-            {
-                this.ship.position.x += 0.25
-                this.experience.camera.camera.position.x += 0.25
-                this.experience.camera.controls.target = this.ship.position
-            }
+                //Server test
+                this.socket.emit('keydown', event.key)
         })
-        window.addEventListener('keydown', (event)=>
+        window.addEventListener('keyup', (event)=>
         {
-            if(event.key == 's')
-            {
-                this.ship.position.x -= 0.25
-                this.experience.camera.camera.position.x -= 0.25
-                this.experience.camera.controls.target = this.ship.position
-            }
-        })
-        window.addEventListener('keydown', (event)=>
-        {
-            if(event.key == 'a')
-            {
-                this.ship.position.z += 0.25
-                this.experience.camera.camera.position.z += 0.25
-                this.experience.camera.controls.target = this.ship.position
-            }
-        })
-        window.addEventListener('keydown', (event)=>
-        {
-            if(event.key == 'd')
-            {
-                this.ship.position.z -= 0.25
-                this.experience.camera.controls.target = this.ship.position
-                this.experience.camera.camera.position.z -= 0.25
-            }
+                //Server test
+                this.socket.emit('keyup', event.key)          
         })
     }
 }
