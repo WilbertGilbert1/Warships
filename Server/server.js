@@ -146,7 +146,7 @@ const serverTick = () =>
         }
         if(players[id].keys.s)
         {
-            players[id].speed -= 0.004
+            players[id].speed -= 0.0004
         } 
         if(players[id].keys.a)
         {

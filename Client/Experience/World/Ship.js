@@ -23,6 +23,16 @@ export default class Ship
         )
         this.ship.position.y += 0.25
 
+        //Camera Test
+        window.addEventListener('keydown', (event)=>
+        {
+            this.socket.emit('keydown', (event.key))
+        })
+        window.addEventListener('keyup', (event)=>
+        {
+            this.socket.emit('keyup', (event.key))
+        })
+
         this.otherPlayers = {}
 
         this.socket.on(
