@@ -3,6 +3,7 @@ import { Server } from 'socket.io'
 import * as fs from 'fs'
 import * as path from 'path'
 import mime from 'mime'
+import PlayerInfo from './PlayerInfo.js'
 
 
 var cache = {}
@@ -80,50 +81,50 @@ const serveStatic = (response, cache, absPath) => {
     }
 }
 
-//PUT THIS STUFF IN A DIFFERENT FILE
-
-class PlayerInfo
-{
-    constructor(id)
-    {
-        this.id = id
-        this.keys = 
-        {
-            w: false,
-            a: false,
-            s: false,
-            d: false,
-        }
-    }
-}
-
 let players = {}
-
 
 io.on('connection', (socket) => {
     players[socket.id] = new PlayerInfo(socket.id)
 
+    io.emit(
+        'initialData', 
+        players
+    )
+
     socket.on('keydown', (obj) =>
     {
-        console.log(obj)
-        if(obj == 'w') players[socket.id].keys.w = true
-        if(obj == 's') players[socket.id].keys.s = true
-        if(obj == 'a') players[socket.id].keys.a = true
-        if(obj == 'd') players[socket.id].keys.d = true
+        switch (obj)
+        {
+        case 'w': 
+            players[socket.id].keys.w = true
+            break
+        case 'a': 
+            players[socket.id].keys.a = true
+            break
+        case 's': 
+            players[socket.id].keys.s = true
+            break
+        case 'd':
+            players[socket.id].keys.d = true
+        }
     })
     socket.on('keyup', (obj) =>
     {
-        console.log(obj)
-        if(obj == 'w') players[socket.id].keys.w = false
-        if(obj == 's') players[socket.id].keys.s = false
-        if(obj == 'a') players[socket.id].keys.a = false
-        if(obj == 'd') players[socket.id].keys.d = false
-    })
-
-
-    // socket.emit(
-    //     // Emit something
-    // )
+        switch (obj)
+        {
+        case 'w': 
+            players[socket.id].keys.w = false
+            break
+        case 'a': 
+            players[socket.id].keys.a = false
+            break
+        case 's': 
+            players[socket.id].keys.s = false
+            break
+        case 'd':
+            players[socket.id].keys.d = false
+        }
+    }) 
 
     socket.on('test', (message) => {
         console.log(message)
@@ -131,18 +132,43 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         delete players[socket.id]
+        io.emit('player disconnect', (socket.id))
     })
 })
 
 const serverTick = () =>
+{
+    for(const id in players)
     {
-        for(const id in players)
+        if(players[id].keys.w) 
         {
-            if(players[id].keys.w) console.log('w')
-            if(players[id].keys.s) console.log('s')
-            if(players[id].keys.a) console.log('a')
-            if(players[id].keys.d) console.log('d')
+            players[id].speed += 0.001
+            // console.log('w')
         }
+        if(players[id].keys.s)
+        {
+            players[id].speed -= 0.0004
+        } 
+        if(players[id].keys.a)
+        {
+            players[id].angle -= 0.001 * players[id].speed
+            } 
+        if(players[id].keys.d)
+        {
+            players[id].angle += 0.001 * players[id].speed
+        }
+        players[id].position.x += players[id].speed * Math.cos(players[id].angle) * 0.015
+        players[id].position.z += players[id].speed * Math.sin(players[id].angle) * 0.015
+        // console.log(players[id].position.x + ", " + players[id].position.z)
+
+
+        // console.log(players)
+        io.emit('positions', (players))  
+        // console.log('positions sent')
+    
     }
+}
 setInterval(serverTick, 15)
+
+
 

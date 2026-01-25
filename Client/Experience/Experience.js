@@ -17,15 +17,20 @@ export default class Experience
             return instance
         }
         instance = this
+
+        //Server
+        this.socket = io('http://localhost:3000')
         
         this.canvas = canvas
         this.sizes = new Sizes()
         this.time = new Time()
         this.scene = new THREE.Scene()
+        this.world = new World()
         this.camera = new Camera(this)
         this.renderer = new Renderer()
-        this.socket = io('http://localhost:3000')
-        this.world = new World()
+
+        this.axesHelper = new THREE.AxesHelper(5)
+        this.scene.add(this.axesHelper)
 
         this.socket.on('connect', () => {
         console.log('Socket connected to server!')
@@ -46,15 +51,16 @@ export default class Experience
 
     update()
     {
-        this.camera.controls.update()
         this.renderer.update()
+        this.camera.update()
+        this.world.update()
     }
 
     resize()
     {
         console.log("resize");
         
-        this.camera.resize()
         this.renderer.resize()
+        this.camera.resize()
     }
 }
