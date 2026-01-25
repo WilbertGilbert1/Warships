@@ -35,4 +35,9 @@ export default class World
              this.ocean.ocean.material.color.set(debugObject.oceanColor)
         })
     } 
+
+    update = () =>
+    {
+        this.ship.update()
+    }
 }
