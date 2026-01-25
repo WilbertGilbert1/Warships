@@ -32,6 +32,12 @@ export default class Experience
         this.axesHelper = new THREE.AxesHelper(5)
         this.scene.add(this.axesHelper)
 
+        this.socket.on('connect', () => {
+        console.log('Socket connected to server!')
+
+        this.socket.emit('test', 'Message. Can be a JS object') 
+        })
+
         this.sizes.on('resize', () =>
         {
             this.resize()
