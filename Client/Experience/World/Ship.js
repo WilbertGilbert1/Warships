@@ -14,7 +14,8 @@ export default class Ship
         this.position = 
         {
             x: 0,
-            z: 0
+            z: 0,
+            y: 0.25
         }
 
         this.ship = new THREE.Mesh(
