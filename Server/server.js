@@ -147,15 +147,15 @@ const serverTick = () =>
         }
         if(players[id].keys.s)
         {
-            players[id].speed -= 0.0004
+            players[id].speed -= 0.0006
         } 
         if(players[id].keys.a)
         {
-            players[id].angle -= 0.001 * players[id].speed
+            players[id].angle -= 0.005 * players[id].speed
             } 
         if(players[id].keys.d)
         {
-            players[id].angle += 0.001 * players[id].speed
+            players[id].angle += 0.005 * players[id].speed
         }
         players[id].position.x += players[id].speed * Math.cos(players[id].angle) * 0.015
         players[id].position.z += players[id].speed * Math.sin(players[id].angle) * 0.015
