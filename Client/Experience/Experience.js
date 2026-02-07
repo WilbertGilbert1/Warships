@@ -20,6 +20,7 @@ export default class Experience
 
         //Server
         this.socket = io('http://localhost:3000')
+       
         
         this.canvas = canvas
         this.sizes = new Sizes()

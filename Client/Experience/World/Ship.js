@@ -15,7 +15,8 @@ export default class Ship
         {
             x: 0,
             z: 0,
-            y: 0.25
+            y: 0.25,
+            angle: 0
         }
 
         this.ship = new THREE.Mesh(
@@ -74,11 +75,13 @@ export default class Ship
                 {
                     this.position.x = players[id].position.x
                     this.position.z = players[id].position.z
+                    this.angle = players[id].angle
                 }
                 else
                 {
                     this.otherPlayers[id].position.x = players[id].position.x
                     this.otherPlayers[id].position.z = players[id].position.z
+                    this.otherPlayers[id].angle = players[id].angle
                 }
             }
         })
@@ -99,8 +102,10 @@ export default class Ship
         {
             this.otherPlayers[id].ship.position.x = this.otherPlayers[id].position.x
             this.otherPlayers[id].ship.position.z = this.otherPlayers[id].position.z
+            this.otherPlayers[id].ship.rotation.y = -this.otherPlayers[id].angle
         }
         this.ship.position.x = this.position.x
         this.ship.position.z = this.position.z
+        this.ship.rotation.y = -this.angle
     }
 }

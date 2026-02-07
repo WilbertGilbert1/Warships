@@ -17,7 +17,7 @@ export default class Camera
         this.ship = this.world.ship
         console.log(this.sizes.width,this.sizes.height);
         
-        this.camera = new THREE.PerspectiveCamera(75, this.sizes.width / this.sizes.height, 0.1, 100)
+        this.camera = new THREE.PerspectiveCamera(80, this.sizes.width / this.sizes.height, 0.1, 100)
         this.camera.position.set(0, 0.5, 0)
         this.ship.ship.add(this.camera)
 
