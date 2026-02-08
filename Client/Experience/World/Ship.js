@@ -1,15 +1,18 @@
 import Experience from "../Experience.js"
 import * as THREE from 'three'
 import OtherPlayer from "./OtherPlayer.js"
+import World from "./World.js"
 
 export default class Ship
 {
-    constructor()
+    constructor(world)
     {
         this.experience = new Experience()
-        this.world = this.experience.world
+        this.world = world
         this.scene = this.experience.scene
         this.socket = this.experience.socket
+        this.camera = this.experience.camera.camera
+        this.shipGroup = this.world.shipGroup
 
         this.position = 
         {
@@ -19,14 +22,24 @@ export default class Ship
             angle: 0
         }
 
+        
+        // Raycaster
+        this.raycaster = new THREE.Raycaster()
+        this.mouse = new THREE.Vector2(0, 0)
+
+
         this.ship = new THREE.Mesh(
             new THREE.BoxGeometry(0.5, 0.5, 0.5),
             new THREE.MeshBasicMaterial({ wireframe: true, color: '#7b0808' })
         )
         this.ship.position.y += 0.25
 
+        // Variables for finding initial verticle shell velocity
+        this.horizontalLengthToShellTarget = 0
+        this.shellAngle = 0
 
-        //Camera Test
+
+        //Camera
         window.addEventListener('keydown', (event)=>
         {
             this.socket.emit('keydown', (event.key))
@@ -94,6 +107,12 @@ export default class Ship
             delete this.otherPlayers[id] 
         })
 
+        // Shells
+        window.addEventListener('click', (event) =>
+        {
+            this.socket.emit('click', event, this.camera.rotation.y, this.shellAngle)
+        })
+
     }
 
     update = () =>
@@ -104,8 +123,23 @@ export default class Ship
             this.otherPlayers[id].ship.position.z = this.otherPlayers[id].position.z
             this.otherPlayers[id].ship.rotation.y = -this.otherPlayers[id].angle
         }
-        this.ship.position.x = this.position.x
-        this.ship.position.z = this.position.z
-        this.ship.rotation.y = -this.angle
+        this.shipGroup.position.x = this.position.x
+        this.shipGroup.position.z = this.position.z
+        this.shipGroup.rotation.y = -this.angle
+
+        //Raycaster
+        this.raycaster.setFromCamera(this.mouse, this.camera)
+        let rayIntersectOcean = this.raycaster.intersectObject(this.world.ocean.ocean)
+
+        // Finding initial verticle shell velocity
+        if(rayIntersectOcean.length > 0 && rayIntersectOcean.length < 100)
+        {
+            this.horizontalLengthToShellTarget = Math.sqrt((this.shipGroup.x - rayIntersectOcean[0].point.x)**2 + (this.shipGroup.z - rayIntersectOcean[0].point.z)**2)
+            this.shellAngle = Math.atan(180/this.horizontalLengthToShellTarget + Math.sqrt(32400/((this.horizontalLengthToShellTarget)**2)+1-this.camera.position.y*180/((this.horizontalLengthToShellTarget)**2)))
+        }
+        else if(rayIntersectOcean.length > 100)
+        {
+           this.shellAngle = Math.PI
+        }
     }
 }

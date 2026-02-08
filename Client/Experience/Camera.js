@@ -14,14 +14,13 @@ export default class Camera
         this.sizes = this.experience.sizes
         this.scene = this.experience.scene
         this.canvas = this.experience.canvas
-        this.ship = this.world.ship
+        this.shipGroup = this.experience.shipGroup
         console.log(this.sizes.width,this.sizes.height);
         
         this.camera = new THREE.PerspectiveCamera(80, this.sizes.width / this.sizes.height, 0.1, 100)
-        this.camera.position.set(0, 0.5, 0)
-        this.ship.ship.add(this.camera)
-
-
+        this.camera.position.set(0, 0.75, 0)
+        this.shipGroup.add(this.camera)
+        this.cameraRotation = this.camera.rotation.y
 
         // this.controls = new OrbitControls(this.camera, this.canvas)
         // this.controls.enableDamping = true
@@ -47,6 +46,7 @@ export default class Camera
 
     update()
     {
+        this.cameraRotation = this.camera.rotation.y
         // this.controls.target = this.ship.ship.position
     }
 }

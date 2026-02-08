@@ -85,12 +85,15 @@ let players = {}
 
 io.on('connection', (socket) => {
     players[socket.id] = new PlayerInfo(socket.id)
+    players[socket.id].position.x = 0
+    players[socket.id].position.z = 0
 
     io.emit(
         'initialData', 
         players
     )
 
+    // Movement
     socket.on('keydown', (obj) =>
     {
         switch (obj)
@@ -126,10 +129,35 @@ io.on('connection', (socket) => {
         }
     }) 
 
-    socket.on('test', (message) => {
-        console.log(message)
+    // Shells
+    socket.on('click', (event, shellAngleXZ, shellAngleY) =>
+    {
+        if(!players[socket.id].shell.ifShell)
+        {
+            console.log('Shell fired!')
+            players[socket.id].shell.ifShell = true
+            setTimeout(() =>
+                {
+                    if(players[socket.id] != undefined && players[socket.id].shell != undefined)
+                    {
+                        players[socket.id].shell.ifShell = false
+                        players[socket.id].shell.position.x = 0
+                        players[socket.id].shell.position.z = 0
+                        players[socket.id].shell.position.y = 0
+                        players[socket.id].shell.angleY = 0
+                        players[socket.id].shell.angleXZ = 0
+                    }
+                },
+                5000)
+            players[socket.id].shell.angleXZ = shellAngleXZ
+            players[socket.id].shell.angleY = shellAngleY
+            players[socket.id].shell.speedVerticle =  players[socket.id].shell.speed * Math.sin(shellAngleY)
+            players[socket.id].shell.position.x = players[socket.id].position.x
+            players[socket.id].shell.position.z = players[socket.id].position.z
+        }
     })
 
+    // Disconnect
     socket.on('disconnect', () => {
         delete players[socket.id]
         io.emit('player disconnect', (socket.id))
@@ -138,29 +166,57 @@ io.on('connection', (socket) => {
 
 const serverTick = () =>
 {
+    // Players
+
     for(const id in players)
     {
         if(players[id].keys.w) 
         {
-            players[id].speed += 0.001
-            // console.log('w')
+            players[id].speed += (0.14 * 50 - players[id].speed)*(1-2.72**(-0.015*8.14))*0.01
+            
         }
         if(players[id].keys.s)
         {
-            players[id].speed -= 0.0006
+            players[id].speed -= 0.4*(0.14 * 50 - players[id].speed)*(1-2.72**(-0.015*8.14)) * 0.01
         } 
-        if(players[id].keys.a)
+        if(players[id].keys.a && players[id].rudderAngle > -0.018)
         {
-            players[id].angle -= 0.005 * players[id].speed
-            } 
-        if(players[id].keys.d)
+            players[id].rudderAngle -= 0.00002
+        }
+        if(players[id].keys.d && players[id].rudderAngle < 0.018)
         {
-            players[id].angle += 0.005 * players[id].speed
+            players[id].rudderAngle += 0.00002
+        }
+        if(!players[id].keys.d && !players[id].keys.a)
+        {
+            if(players[id].rudderAngle > 0) players[id].rudderAngle -= 0.00001
+            else if(players[id].rudderAngle < 0) players[id].rudderAngle += 0.00001
+        }
+       
+        if(players[id].speed > 0 && players[id].speed< 1)
+        {
+            players[id].angle += players[id].rudderAngle * players[id].speed
+        }
+        else if(players[id].speed > 1)
+        {
+            players[id].angle += players[id].rudderAngle / players[id].speed
+        }
+        else if(players[id].speed < 0)
+        {
+            players[id].angle -= players[id].rudderAngle *players[id].speed
         }
         players[id].position.x += players[id].speed * Math.cos(players[id].angle) * 0.015
         players[id].position.z += players[id].speed * Math.sin(players[id].angle) * 0.015
-        // console.log(players[id].position.x + ", " + players[id].position.z)
 
+        //Shells
+        if(players[id].shell.ifShell) 
+        {
+            players[id].shell.position.x += -players[id].shell.speed * Math.sin(players[id].shell.angleXZ) * Math.cos(players[id].shell.angleY) * 0.015
+            players[id].shell.position.z += players[id].shell.speed * Math.cos(players[id].shell.angleXZ) * Math.cos(players[id].shell.angleY) * 0.015
+            players[id].shell.position.y += players[id].shell.speedVerticle * 0.015 - 9.8*(0.015**2)/2
+            players[id].shell.speedVerticle -= 9.8 * 0.015
+            console.log(players[id].shell.position.x)
+        }
 
         // console.log(players)
         io.emit('positions', (players))  

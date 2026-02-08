@@ -18,5 +18,19 @@ export default class OtherPlayer
             new THREE.MeshBasicMaterial({ wireframe: true, color: '#00ffff' })
         )
         this.ship.position.y += 0.25
+
+        this.shell =
+        {
+            ifShell: false,
+            position:
+            {
+                x: this.position.x,
+                z: this.position.z,
+                y: 0.25
+            },
+            angleXZ: 0,
+            angleY: 0,
+            speed: 0
+        }
     }
 }

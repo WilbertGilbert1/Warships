@@ -20,23 +20,26 @@ export default class Experience
 
         //Server
         this.socket = io('http://localhost:3000')
+        // this.socket = io('http://192.168.0.65:3000')
        
-        
+        // Fields
+        this.shipGroup = new THREE.Group()
         this.canvas = canvas
         this.sizes = new Sizes()
         this.time = new Time()
         this.scene = new THREE.Scene()
-        this.world = new World()
         this.camera = new Camera(this)
+        this.world = new World()
+       
         this.renderer = new Renderer()
 
         this.axesHelper = new THREE.AxesHelper(5)
         this.scene.add(this.axesHelper)
 
+        this.scene.add(this.shipGroup)
+
         this.socket.on('connect', () => {
         console.log('Socket connected to server!')
-
-        this.socket.emit('test', 'Message. Can be a JS object') 
         })
 
         this.sizes.on('resize', () =>

@@ -15,9 +15,10 @@ export default class World
         this.experience = new Experience()
         this.scene = this.experience.scene
         this.gui = new GUI()
+        this.shipGroup = this.experience.shipGroup
 
-        this.ship = new Ship()
-        this.scene.add(this.ship.ship)
+        this.ship = new Ship(this)
+        this.shipGroup.add(this.ship.ship)
 
         this.ocean = new Ocean()
         this.scene.add(this.ocean.ocean)
