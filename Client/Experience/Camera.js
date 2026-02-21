@@ -17,8 +17,8 @@ export default class Camera
         this.shipGroup = this.experience.shipGroup
         console.log(this.sizes.width,this.sizes.height);
         
-        this.camera = new THREE.PerspectiveCamera(80, this.sizes.width / this.sizes.height, 0.1, 100)
-        this.camera.position.set(0, 0.75, 0)
+        this.camera = new THREE.PerspectiveCamera(100, this.sizes.width / this.sizes.height, 0.01, 1000)
+        this.camera.position.set(0, 1.5, 0)
         this.shipGroup.add(this.camera)
         this.cameraRotation = this.camera.rotation.y
 

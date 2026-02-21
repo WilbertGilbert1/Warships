@@ -24,11 +24,11 @@ export default class PlayerInfo
             {
                 x: this.position.x,
                 z: this.position.z,
-                y: 0.25
+                y: 1.5
             },
             angleXZ: 0,
             angleY: 0,
-            speed: 0.84 * 10,
+            speed: 0.84 * 35,
             speedVerticle: 0
         },
         this.rudderAngle = 0
