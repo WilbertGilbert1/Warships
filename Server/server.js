@@ -132,6 +132,7 @@ io.on('connection', (socket) => {
     // Shells
     socket.on('click', (event, shellAngleXZ, shellAngleY) =>
     {
+        console.log(shellAngleXZ)
         if(!players[socket.id].shell.ifShell)
         {
             console.log('Shell fired!')
@@ -154,6 +155,8 @@ io.on('connection', (socket) => {
             players[socket.id].shell.speedVerticle =  players[socket.id].shell.speed * Math.sin(shellAngleY)
             players[socket.id].shell.position.x = players[socket.id].position.x
             players[socket.id].shell.position.z = players[socket.id].position.z
+
+            io.emit('shellFired', players[socket.id].shell, socket.id)
         }
     })
 
@@ -172,12 +175,12 @@ const serverTick = () =>
     {
         if(players[id].keys.w) 
         {
-            players[id].speed += (0.14 * 50 - players[id].speed)*(1-2.72**(-0.015*8.14))*0.01
+            players[id].speed += (0.14 * 25 - players[id].speed)*(1-2.72**(-0.015*8.14))*0.01
             
         }
         if(players[id].keys.s)
         {
-            players[id].speed -= 0.4*(0.14 * 50 - players[id].speed)*(1-2.72**(-0.015*8.14)) * 0.01
+            players[id].speed -= 0.4*(0.14 * 25 - players[id].speed)*(1-2.72**(-0.015*8.14)) * 0.01
         } 
         if(players[id].keys.a && players[id].rudderAngle > -0.018)
         {
@@ -211,11 +214,12 @@ const serverTick = () =>
         //Shells
         if(players[id].shell.ifShell) 
         {
-            players[id].shell.position.x += -players[id].shell.speed * Math.sin(players[id].shell.angleXZ) * Math.cos(players[id].shell.angleY) * 0.015
-            players[id].shell.position.z += players[id].shell.speed * Math.cos(players[id].shell.angleXZ) * Math.cos(players[id].shell.angleY) * 0.015
+            players[id].shell.position.x += (-players[id].shell.speed * Math.sin(players[id].shell.angleXZ) * Math.cos(players[id].shell.angleY) * 0.015) *0.2
+            players[id].shell.position.z += (players[id].shell.speed * Math.cos(players[id].shell.angleXZ) * Math.cos(players[id].shell.angleY) * 0.015) * 0.2
             players[id].shell.position.y += players[id].shell.speedVerticle * 0.015 - 9.8*(0.015**2)/2
             players[id].shell.speedVerticle -= 9.8 * 0.015
-            console.log(players[id].shell.position.x)
+
+            io.emit('shellPositions', players[id].shell.position, id)
         }
 
         // console.log(players)

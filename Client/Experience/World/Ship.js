@@ -27,7 +27,7 @@ export default class Ship
         this.raycaster = new THREE.Raycaster()
         this.mouse = new THREE.Vector2(0, 0)
 
-
+        //Ship
         this.ship = new THREE.Mesh(
             new THREE.BoxGeometry(0.5, 0.5, 0.5),
             new THREE.MeshBasicMaterial({ wireframe: true, color: '#7b0808' })
@@ -108,11 +108,55 @@ export default class Ship
         })
 
         // Shells
+        this.shells = {}
+
         window.addEventListener('click', (event) =>
         {
             this.socket.emit('click', event, this.camera.rotation.y, this.shellAngle)
         })
 
+        this.socket.on('shellFired', (shellId, socketId) =>
+        {
+            let shell = new THREE.Mesh(
+                new THREE.SphereGeometry(0.05, 8, 8),
+                new THREE.MeshBasicMaterial({ wireframe: false, color: '#ffffff' })
+            )
+
+            this.fireShell(shellId, shell)
+
+            setTimeout(
+                this.deleteShell,
+                5000,
+                shell,
+                shellId
+            )
+
+            this.shells[socketId] = shell
+        })
+
+        this.socket.on('shellPositions', (shellPosition, shellId) =>
+        {
+            this.shells[shellId].position.x = shellPosition.x
+            this.shells[shellId].position.z = shellPosition.z
+            // this.shells[shellId].position.y = shellPosition.y
+        })
+    }
+
+    fireShell = (shellId, shell) =>
+    {
+        
+        shell.position.y += 0.5
+        shell.position.z = shellId.position.z
+        shell.position.x = shellId.position.x
+        this.scene.add(shell)
+    }
+
+    deleteShell = (shell, shellId) =>
+    {
+        this.scene.remove(shell)
+        shell.material.dispose()
+        shell.geometry.dispose()
+        delete this.shells[shellId]
     }
 
     update = () =>
@@ -132,14 +176,15 @@ export default class Ship
         let rayIntersectOcean = this.raycaster.intersectObject(this.world.ocean.ocean)
 
         // Finding initial verticle shell velocity
-        if(rayIntersectOcean.length > 0 && rayIntersectOcean.length < 100)
+        if(rayIntersectOcean[0] && rayIntersectOcean[0].distance > 0 && rayIntersectOcean[0].distance < 100)
         {
-            this.horizontalLengthToShellTarget = Math.sqrt((this.shipGroup.x - rayIntersectOcean[0].point.x)**2 + (this.shipGroup.z - rayIntersectOcean[0].point.z)**2)
+            this.horizontalLengthToShellTarget = Math.sqrt((this.ship.position.x - rayIntersectOcean[0].point.x)**2 + (this.ship.position.z - rayIntersectOcean[0].point.z)**2)
             this.shellAngle = Math.atan(180/this.horizontalLengthToShellTarget + Math.sqrt(32400/((this.horizontalLengthToShellTarget)**2)+1-this.camera.position.y*180/((this.horizontalLengthToShellTarget)**2)))
         }
-        else if(rayIntersectOcean.length > 100)
+        else if(rayIntersectOcean[0] && rayIntersectOcean[0].distance > 100)
         {
-           this.shellAngle = Math.PI
+           this.shellAngle = Math.PI/2
         }
+        else if(!rayIntersectOcean[0])this.shellAngle = Math.PI/2
     }
 }
