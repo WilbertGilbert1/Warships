@@ -13,6 +13,7 @@ export default class Ship
         this.socket = this.experience.socket
         this.camera = this.experience.camera.camera
         this.shipGroup = this.world.shipGroup
+        this.shellSpeed = 0.84 * 10
 
         this.position = 
         {
@@ -112,7 +113,13 @@ export default class Ship
 
         window.addEventListener('click', (event) =>
         {
-            this.socket.emit('click', event, this.camera.rotation.y, this.shellAngle)
+            let worldQuaternion = new THREE.Quaternion()
+            this.camera.getWorldQuaternion(worldQuaternion)
+            let worldEuler = new THREE.Euler().setFromQuaternion(worldQuaternion, 'YXZ')
+            let absoluteRotationY = worldEuler.y + Math.PI
+            this.socket.emit('click', event, absoluteRotationY, this.shellAngle)
+
+            console.log(this.shellAngle)
         })
 
         this.socket.on('shellFired', (shellId, socketId) =>
@@ -138,8 +145,11 @@ export default class Ship
         {
             this.shells[shellId].position.x = shellPosition.x
             this.shells[shellId].position.z = shellPosition.z
-            // this.shells[shellId].position.y = shellPosition.y
+            this.shells[shellId].position.y = shellPosition.y
         })
+
+        this.maxShellDistance = Math.sqrt((this.shellSpeed/10)**2*(this.shellSpeed**2 + 2 * 10 * 0.75) + 0.75**2)
+        console.log(this.maxShellDistance)
     }
 
     fireShell = (shellId, shell) =>
@@ -176,12 +186,13 @@ export default class Ship
         let rayIntersectOcean = this.raycaster.intersectObject(this.world.ocean.ocean)
 
         // Finding initial verticle shell velocity
-        if(rayIntersectOcean[0] && rayIntersectOcean[0].distance > 0 && rayIntersectOcean[0].distance < 100)
+        if(rayIntersectOcean[0] && rayIntersectOcean[0].distance > 0 && rayIntersectOcean[0].distance < this.maxShellDistance)
         {
             this.horizontalLengthToShellTarget = Math.sqrt((this.ship.position.x - rayIntersectOcean[0].point.x)**2 + (this.ship.position.z - rayIntersectOcean[0].point.z)**2)
-            this.shellAngle = Math.atan(180/this.horizontalLengthToShellTarget + Math.sqrt(32400/((this.horizontalLengthToShellTarget)**2)+1-this.camera.position.y*180/((this.horizontalLengthToShellTarget)**2)))
+            this.verticleLengthToShellTarget = Math.sqrt(rayIntersectOcean[0].distance**2 - this.horizontalLengthToShellTarget**2)
+            this.shellAngle = Math.atan((this.shellSpeed**2 - Math.sqrt(this.shellSpeed**4 - 10*(10*this.horizontalLengthToShellTarget**2 - 2*this.verticleLengthToShellTarget*this.shellSpeed**2)))/(10*this.horizontalLengthToShellTarget))
         }
-        else if(rayIntersectOcean[0] && rayIntersectOcean[0].distance > 100)
+        else if(rayIntersectOcean[0] && rayIntersectOcean[0].distance > this.maxShellDistance)
         {
            this.shellAngle = Math.PI/2
         }

@@ -30,7 +30,8 @@ export default class OtherPlayer
             },
             angleXZ: 0,
             angleY: 0,
-            speed: 0
+            speed: 0.84 * 5000,
+            speedVerticle: 0
         }
     }
 }

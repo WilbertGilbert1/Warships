@@ -28,7 +28,7 @@ export default class PlayerInfo
             },
             angleXZ: 0,
             angleY: 0,
-            speed: 0.84 * 50,
+            speed: 0.84 * 10,
             speedVerticle: 0
         },
         this.rudderAngle = 0

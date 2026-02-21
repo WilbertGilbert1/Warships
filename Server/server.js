@@ -214,10 +214,11 @@ const serverTick = () =>
         //Shells
         if(players[id].shell.ifShell) 
         {
-            players[id].shell.position.x += (-players[id].shell.speed * Math.sin(players[id].shell.angleXZ) * Math.cos(players[id].shell.angleY) * 0.015) *0.2
+            players[id].shell.position.x -= (-players[id].shell.speed * Math.sin(players[id].shell.angleXZ) * Math.cos(players[id].shell.angleY) * 0.015) *0.2
             players[id].shell.position.z += (players[id].shell.speed * Math.cos(players[id].shell.angleXZ) * Math.cos(players[id].shell.angleY) * 0.015) * 0.2
-            players[id].shell.position.y += players[id].shell.speedVerticle * 0.015 - 9.8*(0.015**2)/2
+            players[id].shell.position.y += players[id].shell.speedVerticle * 0.015 - 9.8*(0.015**2)/2 
             players[id].shell.speedVerticle -= 9.8 * 0.015
+            console.log(players[id].shell.position.y)
 
             io.emit('shellPositions', players[id].shell.position, id)
         }
