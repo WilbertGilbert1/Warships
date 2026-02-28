@@ -2,6 +2,7 @@ import Experience from "../Experience.js"
 import * as THREE from 'three'
 import OtherPlayer from "./OtherPlayer.js"
 import World from "./World.js"
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 
 const crosshair = document.querySelector('#crosshair')
 
@@ -15,6 +16,7 @@ export default class Ship
         this.socket = this.experience.socket
         this.camera = this.experience.camera.camera
         this.shipGroup = this.world.shipGroup
+        this.gltfLoader = new GLTFLoader()
 
         this.position = 
         {
@@ -23,6 +25,23 @@ export default class Ship
             y: 0.25,
             angle: 0
         }
+
+        // //Models
+        // this.gltfLoader.load(
+        // '/Experience/Models/Ship1.glb',
+        // (gltf) =>
+        // {
+        //     while(gltf.scene.children.length)
+        //     {
+        //         this.scene.add(gltf.scene.children[0])
+        //     }
+        // }
+        // )
+
+        // this.ambientLight = new THREE.AmbientLight(0xffffff, 10)
+        // this.scene.add(this.ambientLight)
+        // this.directionalLight = new THREE.DirectionalLight(0xffffff, 0.9)
+        // this.scene.add(this.directionalLight)
 
         
         // Raycaster
