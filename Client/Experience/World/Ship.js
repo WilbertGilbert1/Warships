@@ -3,6 +3,8 @@ import * as THREE from 'three'
 import OtherPlayer from "./OtherPlayer.js"
 import World from "./World.js"
 
+const crosshair = document.querySelector('#crosshair')
+
 export default class Ship
 {
     constructor(world)
@@ -112,12 +114,13 @@ export default class Ship
 
         window.addEventListener('click', (event) =>
         {
+            crosshair.style.backgroundColor = 'red'
             let worldQuaternion = new THREE.Quaternion()
             this.camera.getWorldQuaternion(worldQuaternion)
             let worldEuler = new THREE.Euler().setFromQuaternion(worldQuaternion, 'YXZ')
             let absoluteRotationY = worldEuler.y + Math.PI
             this.socket.emit('click', event, absoluteRotationY, this.rayIntersectOcean)
-            console.log(this.rayIntersectOcean)
+            // console.log(this.rayIntersectOcean)
         })
 
         this.socket.on('shellFired', (shellId, socketId) =>
@@ -141,7 +144,7 @@ export default class Ship
 
         this.socket.on('shellPositions', (shellPosition, shellId) =>
         {
-            console.log(this.shells[shellId].position.y)
+            // console.log(this.shells[shellId].position.y)
             this.shells[shellId].position.x = shellPosition.x
             this.shells[shellId].position.z = shellPosition.z
             this.shells[shellId].position.y = shellPosition.y
@@ -163,6 +166,7 @@ export default class Ship
         shell.material.dispose()
         shell.geometry.dispose()
         delete this.shells[shellId]
+        crosshair.style.backgroundColor = '#1ed1d1'
     }
 
     update = () =>

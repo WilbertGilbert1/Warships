@@ -135,26 +135,27 @@ io.on('connection', (socket) => {
         if(!players[socket.id].shell.ifShell)
         {
             players[socket.id].shell.ifShell = true
-            // setTimeout(() =>
-            //     {
-            //         if(players[socket.id] != undefined && players[socket.id].shell != undefined)
-            //         {
-            //             players[socket.id].shell.ifShell = false
-            //             players[socket.id].shell.position.x = players[socket.id].position.x
-            //             players[socket.id].shell.position.z = players[socket.id].position.z
-            //             players[socket.id].shell.position.y = 0.75
-            //             players[socket.id].shell.angleY = 0
-            //             players[socket.id].shell.angleXZ = 0
-            //         }
-            //     },
-            //     5000)
+            setTimeout(() =>
+                {
+                    if(players[socket.id] != undefined && players[socket.id].shell != undefined)
+                    {
+                        players[socket.id].shell.ifShell = false
+                        players[socket.id].shell.position.x = players[socket.id].position.x
+                        players[socket.id].shell.position.z = players[socket.id].position.z
+                        players[socket.id].shell.position.y = 1.5
+                        players[socket.id].shell.angleY = 0
+                        players[socket.id].shell.angleXZ = 0
+                    }
+                },
+                5000)
             players[socket.id].shell.position.x = players[socket.id].position.x
             players[socket.id].shell.position.z = players[socket.id].position.z
-            players[socket.id].shell.position.y = players[socket.id].position.y
+            players[socket.id].shell.position.y = 1.5
             players[socket.id].shell.angleY = countShellYAngle(absoluteRotationY, rayIntersectOcean, players[socket.id].shell)
             players[socket.id].shell.angleXZ = absoluteRotationY
-            console.log(players[socket.id].shell.angleY)
+            // console.log(players[socket.id].shell.angleY)
             players[socket.id].shell.speedY =  players[socket.id].shell.speed * Math.sin(players[socket.id].shell.angleY)
+            // console.log(players[socket.id].shell.speedY)
 
             io.emit('shellFired', players[socket.id].shell, socket.id)
         }
@@ -173,14 +174,14 @@ const countShellYAngle = (absoluteRotationY, rayIntersectOcean, shell) =>
     {
     let rayIntersectOceanHorizontal = rayIntersectOcean[0].distance
     let k = rayIntersectOceanHorizontal**2 - 1.5**2
-    let x = shell.speed**2 / (0.098 * Math.sqrt(k)) - shell.speed**2 / 0.098 * Math.sqrt((1+2*0.098*1.5/shell.speed**2)/k - 0.098**2/shell.speed**4)
+    let x =  shell.speed**2 / (9.8 * Math.sqrt(k)) - shell.speed**2 / 9.8 * Math.sqrt((1+2*9.8*1.5/shell.speed**2)/k - 9.8**2/shell.speed**4)
     if(!Number.isNaN(Math.atan(x))) return Math.atan(x)
-    else if( k == 0) return -Math.PI / 2
-    else return Math.PI / 2
+    else if( k == 0) return -Math.PI / 4
+    else return Math.PI / 4
     }
     else
     {
-        return Math.PI / 2
+        return Math.PI / 4
     }
 }
 
@@ -192,12 +193,12 @@ const serverTick = () =>
     {
         if(players[id].keys.w) 
         {
-            players[id].speed += (0.14  - players[id].speed)*(1-2.72**(-0.015*8.14))
+            players[id].speed += (0.14 * 5  - players[id].speed)*(1-2.72**(-0.015*8.14)) * 0.02
             
         }
         if(players[id].keys.s)
         {
-            players[id].speed -= 0.4*(0.14  - players[id].speed)*(1-2.72**(-0.015*8.14)) 
+            players[id].speed -= 0.4*(0.14 * 5  - players[id].speed)*(1-2.72**(-0.015*8.14)) * 0.02
         } 
         if(players[id].keys.a && players[id].rudderAngle > -0.005)
         {
@@ -228,14 +229,16 @@ const serverTick = () =>
         players[id].position.x += players[id].speed * Math.cos(players[id].angle) * 0.015
         players[id].position.z += players[id].speed * Math.sin(players[id].angle) * 0.015
 
+        // console.log(players[id].speed)
+
         //Shells
         if(players[id].shell.ifShell) 
         {
             players[id].shell.position.x += Math.sin(players[id].shell.angleXZ) * Math.cos(players[id].shell.angleY) * players[id].shell.speed * 0.015
             players[id].shell.position.z += Math.cos(players[id].shell.angleXZ) * Math.cos(players[id].shell.angleY) * players[id].shell.speed * 0.015
             players[id].shell.position.y += players[id].shell.speedY * 0.015
-            players[id].shell.speedY -= 0.098 * 0.015
-            console.log(players[id].shell.speedY)
+            players[id].shell.speedY -= 9.8 * 0.015
+            // console.log(players[id].shell.position.y)
 
             io.emit('shellPositions', players[id].shell.position, id)
         }

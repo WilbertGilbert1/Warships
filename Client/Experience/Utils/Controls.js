@@ -15,8 +15,8 @@ export default class Controls {
         {
             if(!this.zoom && event.key == 'Shift')
             {
-                this.camera.fov = 40
-                this.controls.pointerSpeed = 0.3
+                this.camera.fov = 20
+                this.controls.pointerSpeed = 0.1
                 this.camera.updateProjectionMatrix()
                 this.zoom = true
             }
