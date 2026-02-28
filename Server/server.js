@@ -130,31 +130,31 @@ io.on('connection', (socket) => {
     }) 
 
     // Shells
-    socket.on('click', (event, shellAngleXZ, shellAngleY) =>
+    socket.on('click', (event, absoluteRotationY, rayIntersectOcean) =>
     {
-        console.log(shellAngleXZ)
         if(!players[socket.id].shell.ifShell)
         {
-            console.log('Shell fired!')
             players[socket.id].shell.ifShell = true
-            setTimeout(() =>
-                {
-                    if(players[socket.id] != undefined && players[socket.id].shell != undefined)
-                    {
-                        players[socket.id].shell.ifShell = false
-                        players[socket.id].shell.position.x = players[socket.id].position.x
-                        players[socket.id].shell.position.z = players[socket.id].position.z
-                        players[socket.id].shell.position.y = 0.75
-                        players[socket.id].shell.angleY = 0
-                        players[socket.id].shell.angleXZ = 0
-                    }
-                },
-                5000)
-            players[socket.id].shell.angleXZ = shellAngleXZ
-            players[socket.id].shell.angleY = shellAngleY
-            players[socket.id].shell.speedVerticle =  players[socket.id].shell.speed * Math.sin(shellAngleY)
+            // setTimeout(() =>
+            //     {
+            //         if(players[socket.id] != undefined && players[socket.id].shell != undefined)
+            //         {
+            //             players[socket.id].shell.ifShell = false
+            //             players[socket.id].shell.position.x = players[socket.id].position.x
+            //             players[socket.id].shell.position.z = players[socket.id].position.z
+            //             players[socket.id].shell.position.y = 0.75
+            //             players[socket.id].shell.angleY = 0
+            //             players[socket.id].shell.angleXZ = 0
+            //         }
+            //     },
+            //     5000)
             players[socket.id].shell.position.x = players[socket.id].position.x
             players[socket.id].shell.position.z = players[socket.id].position.z
+            players[socket.id].shell.position.y = players[socket.id].position.y
+            players[socket.id].shell.angleY = countShellYAngle(absoluteRotationY, rayIntersectOcean, players[socket.id].shell)
+            players[socket.id].shell.angleXZ = absoluteRotationY
+            console.log(players[socket.id].shell.angleY)
+            players[socket.id].shell.speedY =  players[socket.id].shell.speed * Math.sin(players[socket.id].shell.angleY)
 
             io.emit('shellFired', players[socket.id].shell, socket.id)
         }
@@ -167,6 +167,23 @@ io.on('connection', (socket) => {
     })
 })
 
+const countShellYAngle = (absoluteRotationY, rayIntersectOcean, shell) =>
+{
+    if(rayIntersectOcean[0] != undefined)
+    {
+    let rayIntersectOceanHorizontal = rayIntersectOcean[0].distance
+    let k = rayIntersectOceanHorizontal**2 - 1.5**2
+    let x = shell.speed**2 / (0.098 * Math.sqrt(k)) - shell.speed**2 / 0.098 * Math.sqrt((1+2*0.098*1.5/shell.speed**2)/k - 0.098**2/shell.speed**4)
+    if(!Number.isNaN(Math.atan(x))) return Math.atan(x)
+    else if( k == 0) return -Math.PI / 2
+    else return Math.PI / 2
+    }
+    else
+    {
+        return Math.PI / 2
+    }
+}
+
 const serverTick = () =>
 {
     // Players
@@ -175,18 +192,18 @@ const serverTick = () =>
     {
         if(players[id].keys.w) 
         {
-            players[id].speed += (0.14 * 10 - players[id].speed)*(1-2.72**(-0.015*8.14))*0.01
+            players[id].speed += (0.14  - players[id].speed)*(1-2.72**(-0.015*8.14))
             
         }
         if(players[id].keys.s)
         {
-            players[id].speed -= 0.4*(0.14 * 10 - players[id].speed)*(1-2.72**(-0.015*8.14)) * 0.01
+            players[id].speed -= 0.4*(0.14  - players[id].speed)*(1-2.72**(-0.015*8.14)) 
         } 
-        if(players[id].keys.a && players[id].rudderAngle > -0.018)
+        if(players[id].keys.a && players[id].rudderAngle > -0.005)
         {
             players[id].rudderAngle -= 0.00002
         }
-        if(players[id].keys.d && players[id].rudderAngle < 0.018)
+        if(players[id].keys.d && players[id].rudderAngle < 0.005)
         {
             players[id].rudderAngle += 0.00002
         }
@@ -214,11 +231,11 @@ const serverTick = () =>
         //Shells
         if(players[id].shell.ifShell) 
         {
-            players[id].shell.position.x -= (-players[id].shell.speed * Math.sin(players[id].shell.angleXZ) * Math.cos(players[id].shell.angleY) * 0.015) *0.2
-            players[id].shell.position.z += (players[id].shell.speed * Math.cos(players[id].shell.angleXZ) * Math.cos(players[id].shell.angleY) * 0.015) * 0.2
-            players[id].shell.position.y += players[id].shell.speedVerticle * 0.015 - 9.8*(0.015**2)/2
-            players[id].shell.speedVerticle -= 9.8 * 0.015
-            // console.log(players[id].shell.position.x + " " + players[id].shell.position.y + players[id].shell.position.z)
+            players[id].shell.position.x += Math.sin(players[id].shell.angleXZ) * Math.cos(players[id].shell.angleY) * players[id].shell.speed * 0.015
+            players[id].shell.position.z += Math.cos(players[id].shell.angleXZ) * Math.cos(players[id].shell.angleY) * players[id].shell.speed * 0.015
+            players[id].shell.position.y += players[id].shell.speedY * 0.015
+            players[id].shell.speedY -= 0.098 * 0.015
+            console.log(players[id].shell.speedY)
 
             io.emit('shellPositions', players[id].shell.position, id)
         }
