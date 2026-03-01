@@ -28,10 +28,12 @@ export default class PlayerInfo
             },
             angleXZ: 0,
             angleY: 0,
-            speed: 0.14 * 100,
-            speedY: 0
+            speed: 0.14 * 120,
+            speedY: 0,
+            hitPlayer: false
         },
         this.rudderAngle = 0
+        this.hp = 100
 
     }
 }

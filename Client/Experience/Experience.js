@@ -44,6 +44,7 @@ export default class Experience
         this.gridHelper.position.y += 0.0099
 
         this.scene.add(this.shipGroup)
+        
 
         this.socket.on('connect', () => {
         console.log('Socket connected to server!')

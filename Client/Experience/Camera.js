@@ -18,8 +18,8 @@ export default class Camera
         console.log(this.sizes.width,this.sizes.height);
         
         this.camera = new THREE.PerspectiveCamera(100, this.sizes.width / this.sizes.height, 0.01, 1000)
-        this.camera.position.set(0, 1.5, 0)
         this.shipGroup.add(this.camera)
+        this.camera.position.set(0, 1.5, 0)
         this.cameraRotation = this.camera.rotation.y
 
         // this.controls = new OrbitControls(this.camera, this.canvas)

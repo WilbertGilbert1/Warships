@@ -145,9 +145,11 @@ io.on('connection', (socket) => {
                         players[socket.id].shell.position.y = 1.5
                         players[socket.id].shell.angleY = 0
                         players[socket.id].shell.angleXZ = 0
+                        players[socket.id].shell.hitPlayer = false
                     }
                 },
-                5000)
+                4000)
+            players[socket.id].shell.hitPlayer = false
             players[socket.id].shell.position.x = players[socket.id].position.x
             players[socket.id].shell.position.z = players[socket.id].position.z
             players[socket.id].shell.position.y = 1.5
@@ -157,7 +159,7 @@ io.on('connection', (socket) => {
             players[socket.id].shell.speedY =  players[socket.id].shell.speed * Math.sin(players[socket.id].shell.angleY)
             // console.log(players[socket.id].shell.speedY)
 
-            io.emit('shellFired', players[socket.id].shell, socket.id)
+            io.emit('shellFired', players[socket.id].shell , socket.id)
         }
     })
 
@@ -176,7 +178,7 @@ const countShellYAngle = (absoluteRotationY, rayIntersectOcean, shell) =>
     let k = rayIntersectOceanHorizontal**2 - 1.5**2
     let x =  shell.speed**2 / (9.8 * Math.sqrt(k)) - shell.speed**2 / 9.8 * Math.sqrt((1+2*9.8*1.5/shell.speed**2)/k - 9.8**2/shell.speed**4)
     if(!Number.isNaN(Math.atan(x))) return Math.atan(x)
-    else if( k == 0) return -Math.PI / 4
+    else if( k == 0) return -Math.PI / 2
     else return Math.PI / 4
     }
     else
@@ -241,6 +243,20 @@ const serverTick = () =>
             // console.log(players[id].shell.position.y)
 
             io.emit('shellPositions', players[id].shell.position, id)
+
+            // Shell hits
+            for(const ID in players)
+            {
+                if(Math.abs(players[id].shell.position.x - players[ID].position.x) <= Math.abs(0.25 * Math.cos(players[ID].angle))
+                && Math.abs(players[id].shell.position.z - players[ID].position.z) <= Math.abs(0.25 * Math.cos(players[ID].angle))
+                && players[id].shell.position.y >= 0 && players[id].shell.position.y <= 0.5
+                && id != ID
+                && !players[id].shell.hitPlayer)
+                {
+                    players[id].shell.hitPlayer = true
+                    io.emit('playerHit', id, ID)
+                }
+            }
         }
 
         // console.log(players)

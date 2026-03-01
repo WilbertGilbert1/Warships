@@ -3,7 +3,7 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(12px, 12px);
+    transform: translate(-50%, -50%);
     width: 6px;
     height: 6px;
     background-color: #1ed1d1;
@@ -13,4 +13,21 @@
     -22px 0 0 #1ed1d1,
     22px 0 0 #1ed1d1;
     z-index: 9999;
+}
+
+body {
+    margin: 0; 
+    padding: 0;
+    overflow: hidden; 
+}
+
+html {
+    overflow: hidden;
+}
+
+.webgl {
+    position: fixed; 
+    top: 0;
+    left: 0;
+    outline: none; 
 }

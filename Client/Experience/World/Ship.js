@@ -25,6 +25,7 @@ export default class Ship
             y: 0.25,
             angle: 0
         }
+        this.hp = 100
 
         // //Models
         // this.gltfLoader.load(
@@ -153,9 +154,9 @@ export default class Ship
 
             setTimeout(
                 this.deleteShell,
-                5000,
+                4000,
                 shell,
-                shellId
+                socketId
             )
 
             this.shells[socketId] = shell
@@ -164,9 +165,40 @@ export default class Ship
         this.socket.on('shellPositions', (shellPosition, shellId) =>
         {
             // console.log(this.shells[shellId].position.y)
-            this.shells[shellId].position.x = shellPosition.x
-            this.shells[shellId].position.z = shellPosition.z
-            this.shells[shellId].position.y = shellPosition.y
+            if(this.shells[shellId] != undefined)
+            {
+                this.shells[shellId].position.x = shellPosition.x
+                this.shells[shellId].position.z = shellPosition.z
+                this.shells[shellId].position.y = shellPosition.y
+            }
+        })
+
+        //Getting hit by shells
+        this.socket.on('playerHit', (shellId, playerId) =>
+        {
+            console.log(shellId + " " + playerId + " " + this.socket.id)
+            if(this.shells[shellId] != undefined) this.shells[shellId].visible = false
+            if(playerId == this.socket.id)
+            {
+                this.hp -= 50
+                if(this.hp == 0)
+                {
+                    window.location.reload()
+                }
+            }
+            else
+            {
+                this.otherPlayers[playerId].hp -= 50
+            }
+        })
+
+        
+        //Reload page when server reboot
+        this.socket.on('disconnect', () => 
+        {
+            setTimeout(() => {
+                window.location.reload()
+            }, 1000)
         })
     }
 
@@ -181,11 +213,11 @@ export default class Ship
 
     deleteShell = (shell, shellId) =>
     {
+        if(shellId == this.socket.id) crosshair.style.backgroundColor = '#1ed1d1'
         this.scene.remove(shell)
         shell.material.dispose()
         shell.geometry.dispose()
         delete this.shells[shellId]
-        crosshair.style.backgroundColor = '#1ed1d1'
     }
 
     update = () =>
@@ -203,5 +235,7 @@ export default class Ship
         //Raycaster
         this.raycaster.setFromCamera(this.mouse, this.camera)
         this.rayIntersectOcean = this.raycaster.intersectObject(this.world.ocean.ocean)
+
+        console.log(this.hp)
     }
 }
