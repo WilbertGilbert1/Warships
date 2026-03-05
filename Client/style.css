@@ -13,6 +13,7 @@
     -22px 0 0 #1ed1d1,
     22px 0 0 #1ed1d1;
     z-index: 9999;
+    visibility: visible;
 }
 
 body {
@@ -30,4 +31,30 @@ html {
     top: 0;
     left: 0;
     outline: none; 
+    z-index: 0;
+}
+
+#deathscreen
+{
+    position: fixed;
+    top: 75%;
+    left: 10%;
+    width: 80%;
+    height: 12%;
+    background-color: rgb(22, 155, 232);
+    border-radius: 5px;
+    visibility: hidden;
+    z-index: 1;
+}
+
+#deathscreenplay
+{
+    position: absolute;
+    top: 70%;
+    left: 25%;
+    width: 50%;
+    height: 20%;
+    background-color: rgb(232, 22, 22);
+    border-radius: 5px;
+    z-index: 2;
 }

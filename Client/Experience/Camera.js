@@ -32,7 +32,11 @@ export default class Camera
         this.pointerLockControls = new PointerLockControls(this.camera, this.canvas)
         document.addEventListener('click', (event) =>
         {
-            this.pointerLockControls.lock()
+            if(this.controls.on)this.pointerLockControls.lock()
+        })
+        document.addEventListener('keydown', (event) =>
+        {
+            if(event.key == 'Escape') document.body.style.cursor = 'auto'
         })
 
         this.controls = new Controls(this.camera, this.canvas, this.pointerLockControls)

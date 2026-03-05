@@ -85,8 +85,8 @@ let players = {}
 
 io.on('connection', (socket) => {
     players[socket.id] = new PlayerInfo(socket.id)
-    players[socket.id].position.x = 0
-    players[socket.id].position.z = 0
+    players[socket.id].position.x = Math.random() * 20
+    players[socket.id].position.z = Math.random() * 20
 
     io.emit(
         'initialData', 
@@ -161,6 +161,16 @@ io.on('connection', (socket) => {
 
             io.emit('shellFired', players[socket.id].shell , socket.id)
         }
+    })
+
+    //Handleing respawn
+    socket.on('respawn', (id) =>
+    {
+        players[id].hp = 100
+        players[id].alive = true
+        players[id].position.x = Math.random() * 20
+        players[id].position.z = Math.random() * 20
+        io.emit('respawnFromServer', id)
     })
 
     // Disconnect
@@ -251,10 +261,20 @@ const serverTick = () =>
                 && Math.abs(players[id].shell.position.z - players[ID].position.z) <= Math.abs(0.25 * Math.cos(players[ID].angle))
                 && players[id].shell.position.y >= 0 && players[id].shell.position.y <= 0.5
                 && id != ID
-                && !players[id].shell.hitPlayer)
+                && !players[id].shell.hitPlayer
+                && players[id].alive)
                 {
                     players[id].shell.hitPlayer = true
+                    players[id].hp -= 50
                     io.emit('playerHit', id, ID)
+                }
+
+                if( players[id].hp == 0)
+                {
+                     players[id].speed = 0
+                     players[id].rudderAngle = 0
+                     players[id].angle = 0
+                     players[id].alive = false
                 }
             }
         }

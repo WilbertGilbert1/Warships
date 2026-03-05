@@ -5,6 +5,8 @@ import World from "./World.js"
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 
 const crosshair = document.querySelector('#crosshair')
+const deathScreen = document.querySelector('#deathscreen')
+const deathScreenPlay = document.querySelector('#deathscreenplay')
 
 export default class Ship
 {
@@ -17,6 +19,10 @@ export default class Ship
         this.camera = this.experience.camera.camera
         this.shipGroup = this.world.shipGroup
         this.gltfLoader = new GLTFLoader()
+        this.pointerLock = this.experience.camera.pointerLockControls
+        this.controls =  this.experience.camera.controls
+
+        this.controls.on = true
 
         this.position = 
         {
@@ -134,13 +140,16 @@ export default class Ship
 
         window.addEventListener('click', (event) =>
         {
-            crosshair.style.backgroundColor = 'red'
-            let worldQuaternion = new THREE.Quaternion()
-            this.camera.getWorldQuaternion(worldQuaternion)
-            let worldEuler = new THREE.Euler().setFromQuaternion(worldQuaternion, 'YXZ')
-            let absoluteRotationY = worldEuler.y + Math.PI
-            this.socket.emit('click', event, absoluteRotationY, this.rayIntersectOcean)
-            // console.log(this.rayIntersectOcean)
+            if(this.controls.on)
+            {
+                crosshair.style.backgroundColor = 'red'
+                let worldQuaternion = new THREE.Quaternion()
+                this.camera.getWorldQuaternion(worldQuaternion)
+                let worldEuler = new THREE.Euler().setFromQuaternion(worldQuaternion, 'YXZ')
+                let absoluteRotationY = worldEuler.y + Math.PI
+                this.socket.emit('click', event, absoluteRotationY, this.rayIntersectOcean)
+                // console.log(this.rayIntersectOcean)
+            }
         })
 
         this.socket.on('shellFired', (shellId, socketId) =>
@@ -183,15 +192,43 @@ export default class Ship
                 this.hp -= 50
                 if(this.hp == 0)
                 {
-                    window.location.reload()
+                    this.controls.on = false
+                    this.pointerLock.unlock()
+
+                    this.ship.visible = false
+                    deathScreen.style.visibility = 'visible'
+                    document.body.style.cursor = 'auto'
+                    crosshair.style.visibility = 'hidden'
+
+                    deathScreenPlay.addEventListener('click', ()=>
+                    {
+                        this.socket.emit('respawn', this.socket.id)
+                        deathScreenPlay.style.zindex = '0'
+                        deathScreen.style.visibility = 'hidden'
+                        document.body.style.cursor = 'none'
+                        crosshair.style.visibility = 'visible'
+                        this.controls.on = true
+                        this.pointerLock.lock()
+                        this.ship.visible = true
+                        this.hp = 100
+                    })
+                    
                 }
             }
             else
             {
                 this.otherPlayers[playerId].hp -= 50
+                if(this.otherPlayers[playerId].hp == 0)
+                {
+                    this.otherPlayers[playerId].ship.visible = false
+                }
             }
         })
 
+        this.socket.on('respawnFromServer', (id) =>
+        {
+            if(id != this.socket.id)this.otherPlayers[id].ship.visible = true
+        })
         
         //Reload page when server reboot
         this.socket.on('disconnect', () => 

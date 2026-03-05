@@ -20,7 +20,7 @@ export default class Experience
 
         //Server
         this.socket = io('http://localhost:3000')
-        // this.socket = io('http://192.168.0.65:3000')
+        // this.socket = io('http://10.1.101.82:3000/')
        
         // Fields
         this.shipGroup = new THREE.Group()

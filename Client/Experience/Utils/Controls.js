@@ -6,6 +6,7 @@ export default class Controls {
     {
         document.body.style.cursor = 'none'
 
+        this.on = false
         this.camera = camera
         this.canvas = canvas
         this.controls = controls
@@ -13,14 +14,14 @@ export default class Controls {
 
         document.addEventListener('keyup', (event) =>
         {
-            if(!this.zoom && event.key == 'Shift')
+            if(!this.zoom && event.key == 'Shift' && this.on)
             {
                 this.camera.fov = 20
                 this.controls.pointerSpeed = 0.1
                 this.camera.updateProjectionMatrix()
                 this.zoom = true
             }
-            else if(this.zoom && event.key == 'Shift')
+            else if(this.zoom && event.key == 'Shift' &&  this.on)
             {
                 this.camera.fov = 75
                 this.controls.pointerSpeed = 1
