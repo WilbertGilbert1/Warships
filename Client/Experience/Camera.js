@@ -17,7 +17,7 @@ export default class Camera
         this.shipGroup = this.experience.shipGroup
         console.log(this.sizes.width,this.sizes.height);
         
-        this.camera = new THREE.PerspectiveCamera(100, this.sizes.width / this.sizes.height, 0.01, 1000)
+        this.camera = new THREE.PerspectiveCamera(100, this.sizes.width / this.sizes.height, 0.01, 50)
         this.shipGroup.add(this.camera)
         this.camera.position.set(0, 1.5, 0)
         this.cameraRotation = this.camera.rotation.y
@@ -33,10 +33,6 @@ export default class Camera
         document.addEventListener('click', (event) =>
         {
             if(this.controls.on)this.pointerLockControls.lock()
-        })
-        document.addEventListener('keydown', (event) =>
-        {
-            if(event.key == 'Escape') document.body.style.cursor = 'auto'
         })
 
         this.controls = new Controls(this.camera, this.canvas, this.pointerLockControls)

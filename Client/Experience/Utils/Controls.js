@@ -4,8 +4,6 @@ import World from '../World/World.js'
 export default class Controls {
     constructor(camera, canvas,controls) 
     {
-        document.body.style.cursor = 'none'
-
         this.on = false
         this.camera = camera
         this.canvas = canvas

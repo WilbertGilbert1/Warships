@@ -3,10 +3,13 @@ import * as THREE from 'three'
 import OtherPlayer from "./OtherPlayer.js"
 import World from "./World.js"
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { gsap } from 'https://unpkg.com/gsap@3.12.5/index.js?module';
 
 const crosshair = document.querySelector('#crosshair')
 const deathScreen = document.querySelector('#deathscreen')
 const deathScreenPlay = document.querySelector('#deathscreenplay')
+const actualHealth = document.querySelector('#actualhp')
+const whiteHealth = document.querySelector('#whitehp')
 
 export default class Ship
 {
@@ -77,6 +80,7 @@ export default class Ship
             this.socket.emit('keyup', (event.key))
         })
 
+        // Other players
         this.otherPlayers = {}
 
         this.socket.on(
@@ -183,6 +187,36 @@ export default class Ship
         })
 
         //Getting hit by shells
+        deathScreenPlay.addEventListener('click', ()=>
+        {
+            this.socket.emit('respawn', this.socket.id)
+            deathScreenPlay.style.zindex = '0'
+            deathScreen.style.visibility = 'hidden'
+            crosshair.style.visibility = 'visible'
+            this.controls.on = true
+            this.pointerLock.lock()
+            this.ship.visible = true
+            this.hp = 100
+            gsap.to(actualHealth, {width: "100%", duration: 2})
+            gsap.to(whiteHealth, {width: "100%", duration: 2})
+            actualHealth.style.visibility = 'visible'
+            whiteHealth.style.visibility = 'visible'
+
+            window.addEventListener('click', (event) =>
+            {
+                if(this.controls.on)
+                {
+                    crosshair.style.backgroundColor = 'red'
+                    let worldQuaternion = new THREE.Quaternion()
+                    this.camera.getWorldQuaternion(worldQuaternion)
+                    let worldEuler = new THREE.Euler().setFromQuaternion(worldQuaternion, 'YXZ')
+                    let absoluteRotationY = worldEuler.y + Math.PI
+                    this.socket.emit('click', event, absoluteRotationY, this.rayIntersectOcean)
+                    // console.log(this.rayIntersectOcean)
+                }
+            })
+        })
+
         this.socket.on('playerHit', (shellId, playerId) =>
         {
             console.log(shellId + " " + playerId + " " + this.socket.id)
@@ -190,6 +224,8 @@ export default class Ship
             if(playerId == this.socket.id)
             {
                 this.hp -= 50
+                gsap.to(actualHealth, {width: "-=50%", duration: 0.4})
+                gsap.to(whiteHealth, {width: "-=50%", duration: 1, delay: 0.7})
                 if(this.hp == 0)
                 {
                     this.controls.on = false
@@ -199,35 +235,42 @@ export default class Ship
                     deathScreen.style.visibility = 'visible'
                     document.body.style.cursor = 'auto'
                     crosshair.style.visibility = 'hidden'
-
-                    deathScreenPlay.addEventListener('click', ()=>
-                    {
-                        this.socket.emit('respawn', this.socket.id)
-                        deathScreenPlay.style.zindex = '0'
-                        deathScreen.style.visibility = 'hidden'
-                        document.body.style.cursor = 'none'
-                        crosshair.style.visibility = 'visible'
-                        this.controls.on = true
-                        this.pointerLock.lock()
-                        this.ship.visible = true
-                        this.hp = 100
-                    })
+                    setTimeout(() => {
+                        whiteHealth.style.visibility = 'hidden'
+                    }, 1700);
+                    setTimeout(() => {
+                        actualHealth.style.visibility = 'hidden'
+                    }, 400);
                     
+
+                    window.removeEventListener('click', (event) =>
+                    {
+                        if(this.controls.on)
+                        {
+                            crosshair.style.backgroundColor = 'red'
+                            let worldQuaternion = new THREE.Quaternion()
+                            this.camera.getWorldQuaternion(worldQuaternion)
+                            let worldEuler = new THREE.Euler().setFromQuaternion(worldQuaternion, 'YXZ')
+                            let absoluteRotationY = worldEuler.y + Math.PI
+                            this.socket.emit('click', event, absoluteRotationY, this.rayIntersectOcean)
+                            // console.log(this.rayIntersectOcean)
+                        }
+                    })
                 }
             }
             else
             {
                 this.otherPlayers[playerId].hp -= 50
-                if(this.otherPlayers[playerId].hp == 0)
-                {
-                    this.otherPlayers[playerId].ship.visible = false
-                }
             }
         })
 
         this.socket.on('respawnFromServer', (id) =>
         {
-            if(id != this.socket.id)this.otherPlayers[id].ship.visible = true
+            if(id != this.socket.id)
+            {
+                this.otherPlayers[id].ship.visible = true
+                this.otherPlayers[id].hp = 100
+            }
         })
         
         //Reload page when server reboot
@@ -238,6 +281,7 @@ export default class Ship
             }, 1000)
         })
     }
+
 
     fireShell = (shellId, shell) =>
     {
@@ -264,6 +308,15 @@ export default class Ship
             this.otherPlayers[id].ship.position.x = this.otherPlayers[id].position.x
             this.otherPlayers[id].ship.position.z = this.otherPlayers[id].position.z
             this.otherPlayers[id].ship.rotation.y = -this.otherPlayers[id].angle
+
+            if(this.otherPlayers[id].hp == 0)
+            {
+                this.otherPlayers[id].ship.visible = false
+            }
+            else 
+            {
+                this.otherPlayers[id].ship.visible = true
+            }
         }
         this.shipGroup.position.x = this.position.x
         this.shipGroup.position.z = this.position.z

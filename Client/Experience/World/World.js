@@ -14,7 +14,7 @@ export default class World
     {
         this.experience = new Experience()
         this.scene = this.experience.scene
-        this.gui = new GUI()
+        // this.gui = new GUI()
         this.shipGroup = this.experience.shipGroup
 
         this.ship = new Ship(this)
@@ -23,22 +23,23 @@ export default class World
         this.ocean = new Ocean()
         this.scene.add(this.ocean.ocean)
 
-        //GUI
-        this.gui.addColor(debugObject, 'shipColor')
-        .onChange(() =>
-        {
-            this.ship.ship.material.color.set(debugObject.shipColor)
-        }
-        )
-        this.gui.addColor(debugObject, 'oceanColor')
-        .onChange(() =>
-        {
-             this.ocean.ocean.material.color.set(debugObject.oceanColor)
-        })
+    //     //GUI
+    //     this.gui.addColor(debugObject, 'shipColor')
+    //     .onChange(() =>
+    //     {
+    //         this.ship.ship.material.color.set(debugObject.shipColor)
+    //     }
+    //     )
+    //     this.gui.addColor(debugObject, 'oceanColor')
+    //     .onChange(() =>
+    //     {
+    //          this.ocean.ocean.material.color.set(debugObject.oceanColor)
+    //     })
     } 
 
     update = () =>
     {
         this.ship.update()
+        this.ocean.update()
     }
 }

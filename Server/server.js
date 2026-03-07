@@ -173,6 +173,7 @@ io.on('connection', (socket) => {
         io.emit('respawnFromServer', id)
     })
 
+
     // Disconnect
     socket.on('disconnect', () => {
         delete players[socket.id]
@@ -240,6 +241,26 @@ const serverTick = () =>
         }
         players[id].position.x += players[id].speed * Math.cos(players[id].angle) * 0.015
         players[id].position.z += players[id].speed * Math.sin(players[id].angle) * 0.015
+        if(players[id].position.x > 200)
+        {
+            players[id].position.x = 200
+            
+        }
+        if(players[id].position.z > 200)
+        {
+            players[id].position.z = 200
+            
+        }
+        if(players[id].position.x < - 200)
+        {
+            players[id].position.x = -200
+            
+        }
+        if(players[id].position.z < - 200)
+        {
+            players[id].position.z = -200
+            
+        }
 
         // console.log(players[id].speed)
 
@@ -262,19 +283,19 @@ const serverTick = () =>
                 && players[id].shell.position.y >= 0 && players[id].shell.position.y <= 0.5
                 && id != ID
                 && !players[id].shell.hitPlayer
-                && players[id].alive)
+                && players[ID].alive)
                 {
                     players[id].shell.hitPlayer = true
-                    players[id].hp -= 50
+                    players[ID].hp -= 50
                     io.emit('playerHit', id, ID)
                 }
 
-                if( players[id].hp == 0)
+                if( players[ID].hp == 0)
                 {
-                     players[id].speed = 0
-                     players[id].rudderAngle = 0
-                     players[id].angle = 0
-                     players[id].alive = false
+                     players[ID].speed = 0
+                     players[ID].rudderAngle = 0
+                     players[ID].angle = 0
+                     players[ID].alive = false
                 }
             }
         }

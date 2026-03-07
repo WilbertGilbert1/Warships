@@ -37,12 +37,12 @@ html {
 #deathscreen
 {
     position: fixed;
-    top: 75%;
-    left: 10%;
-    width: 80%;
-    height: 12%;
+    top: 70%;
+    left: 25%;
+    width: 50%;
+    height: 17%;
     background-color: rgb(22, 155, 232);
-    border-radius: 5px;
+    border-top-left-radius: 5px;
     visibility: hidden;
     z-index: 1;
 }
@@ -50,11 +50,68 @@ html {
 #deathscreenplay
 {
     position: absolute;
-    top: 70%;
+    top: 60%;
     left: 25%;
     width: 50%;
-    height: 20%;
+    height: 30%;
     background-color: rgb(232, 22, 22);
     border-radius: 5px;
     z-index: 2;
+}
+
+#healthbar
+{
+    position: fixed;
+    top: 91.5%;
+    left: 34.75%;
+    width: 35%;
+    background-color: rgb(13, 16, 32, 0.8);
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    outline-width: 1px;
+    outline-color: white;
+    outline-style: solid;
+    visibility: visible;
+    z-index: 1;
+    aspect-ratio: 10 / 1;
+}
+
+#whitehp
+{
+    position: absolute;
+    width: calc(100%);
+    height: calc(100%);
+    background-color: rgb(185, 185, 185);
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    visibility: visible;
+    z-index: 1.5;
+    opacity: 1;
+}
+
+#actualhp
+{
+    position: absolute;
+    width: calc(100%);
+    height: calc(100%);
+    background-color: rgb(214, 52, 111);
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    visibility: visible;
+    z-index: 2;
+    opacity: 1;
+}
+
+#heart
+{
+    position: fixed;
+    top: 91.5%;
+    left: 30.75%;
+    width: 3.5%;
+    background-image: url('./Images/pixelHeart2.webp');
+    background-position: 50% 50%; 
+    aspect-ratio: 1 / 1;
+    background-size: 200% 200%;
+    z-index: 1;
+    background-repeat: no-repeat;
 }
