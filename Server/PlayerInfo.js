@@ -35,6 +35,7 @@ export default class PlayerInfo
         this.rudderAngle = 0
         this.hp = 100
         this.alive = true
+        this.kills = 0
 
     }
 }

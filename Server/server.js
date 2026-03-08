@@ -88,6 +88,17 @@ io.on('connection', (socket) => {
     players[socket.id].position.x = Math.random() * 20
     players[socket.id].position.z = Math.random() * 20
 
+    let counter = 0
+    for(const id in players)
+    {
+        killsArray[counter] = players[id]
+        counter++
+    }
+    for(let i =0; i<killsArray.length; i++)
+    {
+
+    }
+
     io.emit(
         'initialData', 
         players
@@ -198,6 +209,8 @@ const countShellYAngle = (absoluteRotationY, rayIntersectOcean, shell) =>
     }
 }
 
+const killsArray = []
+
 const serverTick = () =>
 {
     // Players
@@ -241,24 +254,24 @@ const serverTick = () =>
         }
         players[id].position.x += players[id].speed * Math.cos(players[id].angle) * 0.015
         players[id].position.z += players[id].speed * Math.sin(players[id].angle) * 0.015
-        if(players[id].position.x > 200)
+        if(players[id].position.x > 100)
         {
-            players[id].position.x = 200
+            players[id].position.x = 100
             
         }
-        if(players[id].position.z > 200)
+        if(players[id].position.z > 100)
         {
-            players[id].position.z = 200
+            players[id].position.z = 100
             
         }
-        if(players[id].position.x < - 200)
+        if(players[id].position.x < - 100)
         {
-            players[id].position.x = -200
+            players[id].position.x = -100
             
         }
-        if(players[id].position.z < - 200)
+        if(players[id].position.z < - 100)
         {
-            players[id].position.z = -200
+            players[id].position.z = -100
             
         }
 
@@ -296,6 +309,7 @@ const serverTick = () =>
                      players[ID].rudderAngle = 0
                      players[ID].angle = 0
                      players[ID].alive = false
+                     players[id].kills ++ 
                 }
             }
         }

@@ -10,6 +10,7 @@ const deathScreen = document.querySelector('#deathscreen')
 const deathScreenPlay = document.querySelector('#deathscreenplay')
 const actualHealth = document.querySelector('#actualhp')
 const whiteHealth = document.querySelector('#whitehp')
+const mapPointer = document.getElementById('mappointer')
 
 export default class Ship
 {
@@ -327,5 +328,11 @@ export default class Ship
         this.rayIntersectOcean = this.raycaster.intersectObject(this.world.ocean.ocean)
 
         console.log(this.hp)
+
+        // Html
+        mapPointer.style.top = 50 - (this.shipGroup.position.x)/2  -  parseFloat(window.getComputedStyle(mapPointer).height)/(2*window.innerWidth*0.18)*100+ "%"
+        mapPointer.style.left = 50 + (this.shipGroup.position.z)/2  -  parseFloat(window.getComputedStyle(mapPointer).width)/(2*window.innerWidth*0.18)*100+ "%"
+        mapPointer.style.transform = `rotate(${-this.shipGroup.rotation.y / (2*Math.PI) * 360 }deg)`
+        console.log(parseFloat(window.getComputedStyle(mapPointer).height))
     }
 }
