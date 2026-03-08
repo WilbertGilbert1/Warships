@@ -37,22 +37,25 @@ export default class Ship
         }
         this.hp = 100
 
-        // //Models
-        // this.gltfLoader.load(
-        // '/Experience/Models/Ship1.glb',
-        // (gltf) =>
-        // {
-        //     while(gltf.scene.children.length)
-        //     {
-        //         this.scene.add(gltf.scene.children[0])
-        //     }
-        // }
-        // )
+        //Models
+        this.gltfLoader.load(
+        '/Experience/Models/myShip2.glb',
+        (gltf) =>
+        {
+            gltf.scene.scale.set(0.5, 0.5, 0.5)
+            const children = [...gltf.scene.children]
+            for(const child of children)
+            {
+                child.position.x += 0.75
+                this.shipGroup.add(child)
+            }
+        }
+        )
 
-        // this.ambientLight = new THREE.AmbientLight(0xffffff, 10)
-        // this.scene.add(this.ambientLight)
-        // this.directionalLight = new THREE.DirectionalLight(0xffffff, 0.9)
-        // this.scene.add(this.directionalLight)
+        this.ambientLight = new THREE.AmbientLight(0xffffff, 10)
+        this.scene.add(this.ambientLight)
+        this.directionalLight = new THREE.DirectionalLight(0xffffff, 1.2)
+        this.scene.add(this.directionalLight)
 
         
         // Raycaster

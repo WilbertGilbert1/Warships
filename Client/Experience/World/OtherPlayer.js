@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 
 export default class OtherPlayer
 {
@@ -20,6 +21,9 @@ export default class OtherPlayer
         this.ship.position.y += 0.25
         this.ship.position.x = 0
         this.ship.position.z = 0
+
+        //Models
+        this.gltfLoader = new GLTFLoader()
 
         this.shell =
         {
