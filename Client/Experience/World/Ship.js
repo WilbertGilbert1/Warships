@@ -39,22 +39,28 @@ export default class Ship
 
         //Models
         this.gltfLoader.load(
-        '/Experience/Models/myShip2.glb',
+        '/Experience/Models/ship.glb',
         (gltf) =>
         {
-            gltf.scene.scale.set(0.5, 0.5, 0.5)
-            const children = [...gltf.scene.children]
-            for(const child of children)
+            while(gltf.scene.children.length)
             {
-                child.position.x += 0.75
-                this.shipGroup.add(child)
+                gltf.scene.children[0].position.x += 0.45
+                this.shipGroup.add(gltf.scene.children[0])
             }
         }
         )
 
+        this.ship1 = new THREE.Mesh(
+            new THREE.BoxGeometry(2.4, 0.5, 0.5),
+            new THREE.MeshBasicMaterial({ wireframe: true, color: '#ff00ee' })
+        )
+        this.ship1.position.y += 0.25
+         this.ship1.position.x += 0.35
+        this.shipGroup.add(this.ship1)
+
         this.ambientLight = new THREE.AmbientLight(0xffffff, 10)
         this.scene.add(this.ambientLight)
-        this.directionalLight = new THREE.DirectionalLight(0xffffff, 1.2)
+        this.directionalLight = new THREE.DirectionalLight(0xffffff, 0.9)
         this.scene.add(this.directionalLight)
 
         
@@ -68,6 +74,7 @@ export default class Ship
             new THREE.MeshBasicMaterial({ wireframe: true, color: '#7b0808' })
         )
         this.ship.position.y += 0.25
+
 
         // Variables for finding initial verticle shell velocity
         this.horizontalLengthToShellTarget = 0
@@ -107,7 +114,18 @@ export default class Ship
         {
             for(const id in this.otherPlayers)
             {
-                this.scene.add(this.otherPlayers[id].ship)   
+                this.gltfLoader.load(
+                '/Experience/Models/ship.glb',
+                (gltf) =>
+                {
+                    while(gltf.scene.children.length)
+                    {
+                        gltf.scene.children[0].position.x += 0.45
+                        this.otherPlayers[id].shipGroup.add(gltf.scene.children[0])
+                    }
+                }
+                )
+                this.scene.add(this.otherPlayers[id].shipGroup)   
             }
         }
 
@@ -137,9 +155,10 @@ export default class Ship
 
         this.socket.on('player disconnect', (id) =>
         {
-            this.scene.remove(this.otherPlayers[id].ship)
-            this.otherPlayers[id].ship.material.dispose()
-            this.otherPlayers[id].ship.geometry.dispose()
+            this.scene.remove(this.otherPlayers[id].shipGroup)
+            myGroup.traverse((child) => {
+                disposeHierarchy(child)
+            })
             delete this.otherPlayers[id] 
         })
 
@@ -239,12 +258,6 @@ export default class Ship
                     deathScreen.style.visibility = 'visible'
                     document.body.style.cursor = 'auto'
                     crosshair.style.visibility = 'hidden'
-                    setTimeout(() => {
-                        whiteHealth.style.visibility = 'hidden'
-                    }, 1700);
-                    setTimeout(() => {
-                        actualHealth.style.visibility = 'hidden'
-                    }, 400);
                     
 
                     window.removeEventListener('click', (event) =>
@@ -272,7 +285,10 @@ export default class Ship
         {
             if(id != this.socket.id)
             {
-                this.otherPlayers[id].ship.visible = true
+                setTimeout(() =>
+                {
+                    this.otherPlayers[id].shipGroup.visible = true
+                }, 100)
                 this.otherPlayers[id].hp = 100
             }
         })
@@ -284,6 +300,23 @@ export default class Ship
                 window.location.reload()
             }, 1000)
         })
+    }
+
+    disposeHierarchy = (child) =>
+    {
+        if( child instanceof THREE.Mesh)
+        {
+            if(child.geometry)
+            {
+                child.geometry.dispose()
+            }
+
+            if(child.material) child.material.dispose
+
+            if (child.parent) {
+                child.parent.remove(child);
+            }
+        }
     }
 
 
@@ -309,17 +342,17 @@ export default class Ship
     {
         for(let id in this.otherPlayers)
         {
-            this.otherPlayers[id].ship.position.x = this.otherPlayers[id].position.x
-            this.otherPlayers[id].ship.position.z = this.otherPlayers[id].position.z
-            this.otherPlayers[id].ship.rotation.y = -this.otherPlayers[id].angle
+            this.otherPlayers[id].shipGroup.position.x = this.otherPlayers[id].position.x
+            this.otherPlayers[id].shipGroup.position.z = this.otherPlayers[id].position.z
+            this.otherPlayers[id].shipGroup.rotation.y = -this.otherPlayers[id].angle
 
             if(this.otherPlayers[id].hp == 0)
             {
-                this.otherPlayers[id].ship.visible = false
+                this.otherPlayers[id].shipGroup.visible = false
             }
             else 
             {
-                this.otherPlayers[id].ship.visible = true
+                this.otherPlayers[id].shipGroup.visible = true
             }
         }
         this.shipGroup.position.x = this.position.x

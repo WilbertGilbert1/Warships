@@ -1,3 +1,5 @@
+import * as THREE from 'three'
+
 export default class PlayerInfo
 {
     constructor(id)
@@ -26,16 +28,25 @@ export default class PlayerInfo
                 z: this.position.z,
                 y: 1.5
             },
+            vectorPosition: new THREE.Vector3(0, 0, 0),
             angleXZ: 0,
             angleY: 0,
             speed: 0.14 * 120,
             speedY: 0,
-            hitPlayer: false
+            speedX: 0,
+            speedZ: 0,
+            hitPlayer: false,
+            velocity: new THREE.Vector3(0, 0, 0)
         },
         this.rudderAngle = 0
         this.hp = 100
         this.alive = true
         this.kills = 0
+        this.ship = new THREE.Mesh(
+            new THREE.BoxGeometry(2.4, 0.5, 0.5),
+            new THREE.MeshBasicMaterial()
+        )
+        this.ship.position.y = 0.25
 
     }
 }

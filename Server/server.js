@@ -4,7 +4,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import mime from 'mime'
 import PlayerInfo from './PlayerInfo.js'
-
+import * as THREE from 'three'
 
 var cache = {}
 
@@ -82,22 +82,16 @@ const serveStatic = (response, cache, absPath) => {
 }
 
 let players = {}
+const scene = new THREE.Scene()
 
 io.on('connection', (socket) => {
     players[socket.id] = new PlayerInfo(socket.id)
     players[socket.id].position.x = Math.random() * 20
     players[socket.id].position.z = Math.random() * 20
 
-    let counter = 0
-    for(const id in players)
-    {
-        killsArray[counter] = players[id]
-        counter++
-    }
-    for(let i =0; i<killsArray.length; i++)
-    {
-
-    }
+    players[socket.id].ship.position.x = players[socket.id].position.x
+    players[socket.id].ship.position.z = players[socket.id].position.z
+    scene.add(players[socket.id].ship)
 
     io.emit(
         'initialData', 
@@ -168,6 +162,8 @@ io.on('connection', (socket) => {
             players[socket.id].shell.angleXZ = absoluteRotationY
             // console.log(players[socket.id].shell.angleY)
             players[socket.id].shell.speedY =  players[socket.id].shell.speed * Math.sin(players[socket.id].shell.angleY)
+            players[socket.id].shell.speedZ = players[socket.id].shell.speed * Math.cos(players[socket.id].shell.angleY) * Math.cos( players[socket.id].shell.angleXZ)
+            players[socket.id].shell.speedX = players[socket.id].shell.speed * Math.cos(players[socket.id].shell.angleY) * Math.sin( players[socket.id].shell.angleXZ)
             // console.log(players[socket.id].shell.speedY)
 
             io.emit('shellFired', players[socket.id].shell , socket.id)
@@ -209,7 +205,14 @@ const countShellYAngle = (absoluteRotationY, rayIntersectOcean, shell) =>
     }
 }
 
-const killsArray = []
+const raycaster = new THREE.Raycaster()
+
+const ocean = new THREE.Mesh(
+    new THREE.PlaneGeometry(2000, 2000),
+    new THREE.MeshBasicMaterial()
+)
+ocean.rotation.x -= (Math.PI)
+scene.add(ocean)
 
 const serverTick = () =>
 {
@@ -254,6 +257,11 @@ const serverTick = () =>
         }
         players[id].position.x += players[id].speed * Math.cos(players[id].angle) * 0.015
         players[id].position.z += players[id].speed * Math.sin(players[id].angle) * 0.015
+        players[id].ship.position.x = players[id].position.x
+        players[id].ship.position.z = players[id].position.z
+        players[id].ship.rotation.y = -players[id].angle
+
+        //Boarder
         if(players[id].position.x > 100)
         {
             players[id].position.x = 100
@@ -280,24 +288,31 @@ const serverTick = () =>
         //Shells
         if(players[id].shell.ifShell) 
         {
-            players[id].shell.position.x += Math.sin(players[id].shell.angleXZ) * Math.cos(players[id].shell.angleY) * players[id].shell.speed * 0.015
-            players[id].shell.position.z += Math.cos(players[id].shell.angleXZ) * Math.cos(players[id].shell.angleY) * players[id].shell.speed * 0.015
+            players[id].shell.position.x +=  players[id].shell.speedX * 0.015
+            players[id].shell.position.z += players[id].shell.speedZ  * 0.015
             players[id].shell.position.y += players[id].shell.speedY * 0.015
             players[id].shell.speedY -= 9.8 * 0.015
             // console.log(players[id].shell.position.y)
 
             io.emit('shellPositions', players[id].shell.position, id)
 
+            players[id].shell.vectorPosition.set(players[id].shell.position.x, players[id].shell.position.y, players[id].shell.position.z)
+            players[id].shell.velocity.set(players[id].shell.speedX, players[id].shell.speedY, players[id].shell.speedZ)
+            let direction = players[id].shell.velocity.clone().normalize()
+
             // Shell hits
             for(const ID in players)
             {
-                if(Math.abs(players[id].shell.position.x - players[ID].position.x) <= Math.abs(0.25 * Math.cos(players[ID].angle))
-                && Math.abs(players[id].shell.position.z - players[ID].position.z) <= Math.abs(0.25 * Math.cos(players[ID].angle))
-                && players[id].shell.position.y >= 0 && players[id].shell.position.y <= 0.5
-                && id != ID
-                && !players[id].shell.hitPlayer
-                && players[ID].alive)
+                raycaster.set(players[id].shell.vectorPosition, direction)
+                let hullIntersect = raycaster.intersectObject(players[ID].ship)
+                let intersectOcean = raycaster.intersectObject(ocean)
+                console.log(intersectOcean[0])
+                if( hullIntersect[0] != undefined && hullIntersect[0].distance <=  2 * 0.015 * players[id].shell.velocity.length()
+                    && id != ID
+                    && !players[id].shell.hitPlayer
+                    && players[ID].alive)
                 {
+                    console.log('yes')
                     players[id].shell.hitPlayer = true
                     players[ID].hp -= 50
                     io.emit('playerHit', id, ID)
@@ -309,6 +324,7 @@ const serverTick = () =>
                      players[ID].rudderAngle = 0
                      players[ID].angle = 0
                      players[ID].alive = false
+                     
                      players[id].kills ++ 
                 }
             }
