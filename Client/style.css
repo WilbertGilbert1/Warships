@@ -181,3 +181,136 @@ table, td, th
     background-repeat: no-repeat;
     background-position: 50% 50%;
 }
+
+#ap
+{
+    position: fixed;
+    top: 10%;
+    left: 28%;
+    height: 45%;
+    background-color: rgb(13, 16, 32, 0.8);
+    border-radius: 1px;
+    outline-width: 2px;
+    outline-color: rgb(255, 210, 210);
+    outline-style: solid;
+    visibility: visible;
+    z-index: 1.1;
+    aspect-ratio: 1 / 1;
+}
+
+#he
+{
+    position: fixed;
+    top: 10%;
+    left: 40%;
+    height: 45%;
+    background-color: rgb(13, 16, 32, 0.8);
+    border-radius: 1px;
+    outline-width: 1px;
+    outline-color: white;
+    outline-style: solid;
+    visibility: visible;
+    z-index: 1.1;
+    aspect-ratio: 1 / 1;
+}
+
+#heal
+{
+    position: fixed;
+    top: 10%;
+    left: 52%;
+    height: 45%;
+    background-image: url('./Images/greenPlus.png');
+    border-radius: 1px;
+    outline-width: 1px;
+    outline-color: white;
+    outline-style: solid;
+    visibility: visible;
+    z-index: 1.1;
+    aspect-ratio: 1 / 1;
+    background-size: 70%;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+#repair
+{
+    position: fixed;
+    top: 10%;
+    left: 64%;
+    height: 45%;
+    background-color: rgb(13, 16, 32, 0.8);
+    border-radius: 1px;
+    outline-width: 1px;
+    outline-color: white;
+    outline-style: solid;
+    visibility: visible;
+    z-index: 1.1;
+    aspect-ratio: 1 / 1;
+    background-image: url('./Images/wrench.png');
+    background-size: 70%;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+#textap
+{
+    position: absolute;
+    top:  45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgb(234, 45, 45);
+    font-size: 1.6vw;
+    transform: translate(-50%, -125%);
+    font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+}
+#texthe
+{
+    position: absolute;
+    top:  45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgb(255, 115, 0);
+    font-size: 1.6vw;
+    transform: translate(-50%, -125%);
+    font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+#text1
+{
+    position: absolute;
+    top:  0%;
+    left: 5%;
+    color: white;
+    font-size: 0.75vw;
+    transform: translate(-0%, -55%);
+}
+#text2
+{
+    position: absolute;
+    top:  0%;
+    left: 5%;
+    color: white;
+    font-size: 0.75vw;
+    transform: translate(-0%, -55%);
+}
+#text3
+{
+    position: absolute;
+    top:  0%;
+    left: 5%;
+    color: white;
+    font-size: 0.75vw;
+    transform: translate(-0%, -55%);
+}
+#text4
+{
+    position: absolute;
+    top:  0%;
+    left: 5%;
+    color: white;
+    font-size: 0.75vw;
+    transform: translate(-0%, -55%);
+}

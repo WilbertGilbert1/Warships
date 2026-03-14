@@ -39,9 +39,9 @@ export default class Experience
         this.axesHelper.position.z += 0.01
         this.axesHelper.position.x += 0.01
 
-        this.gridHelper = new THREE.GridHelper(200, 200)
-        this.scene.add(this.gridHelper)
-        this.gridHelper.position.y += 0.0099
+        // this.gridHelper = new THREE.GridHelper(200, 200)
+        // this.scene.add(this.gridHelper)
+        // this.gridHelper.position.y += 0.0099
 
         this.scene.add(this.shipGroup)
         

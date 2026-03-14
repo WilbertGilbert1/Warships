@@ -180,6 +180,25 @@ io.on('connection', (socket) => {
         io.emit('respawnFromServer', id)
     })
 
+    socket.on('toHe', (id) =>
+    {
+        players[id].he = true
+        players[id].shell.ifShell = true
+        setTimeout(() =>
+        {
+            players[id].shell.ifShell = false
+        }, 4000)
+    })
+    socket.on('toAp', (id) =>
+    {
+        players[id].he = false
+        players[id].shell.ifShell = true
+        setTimeout(() =>
+        {
+            players[id].shell.ifShell = false
+        }, 4000)
+    })
+
 
     // Disconnect
     socket.on('disconnect', () => {
@@ -296,27 +315,64 @@ const serverTick = () =>
 
             io.emit('shellPositions', players[id].shell.position, id)
 
-            players[id].shell.vectorPosition.set(players[id].shell.position.x, players[id].shell.position.y, players[id].shell.position.z)
-            players[id].shell.velocity.set(players[id].shell.speedX, players[id].shell.speedY, players[id].shell.speedZ)
-            let direction = players[id].shell.velocity.clone().normalize()
+            // players[id].shell.vectorPosition.set(players[id].shell.position.x, players[id].shell.position.y, players[id].shell.position.z)
+            // players[id].shell.velocity.set(players[id].shell.speedX, players[id].shell.speedY, players[id].shell.speedZ)
+            // let direction = players[id].shell.velocity.clone().normalize()
 
             // Shell hits
             for(const ID in players)
             {
-                raycaster.set(players[id].shell.vectorPosition, direction)
-                let hullIntersect = raycaster.intersectObject(players[ID].ship)
-                let intersectOcean = raycaster.intersectObject(ocean)
-                console.log(intersectOcean[0])
-                if( hullIntersect[0] != undefined && hullIntersect[0].distance <=  2 * 0.015 * players[id].shell.velocity.length()
+                // raycaster.set(players[id].shell.vectorPosition, direction)
+                // let hullIntersect = raycaster.intersectObject(players[ID].ship)
+                // let intersectOcean = raycaster.intersectObject(ocean)
+                // console.log(intersectOcean[0])
+                let x = -(players[id].shell.position.z - players[ID].position.z)*Math.cos(players[ID].angle) + Math.sin(players[ID].angle)*((players[id].shell.position.x - players[ID].position.x))
+                let z = (players[id].shell.position.z - players[ID].position.z)*Math.sin(players[ID].angle) + Math.cos(players[ID].angle)*((players[id].shell.position.x - players[ID].position.x))
+                let option = 0
+                if( Math.abs(z) <= 0.15
+                    && Math.abs(x) <= 0.15
+                    && Math.abs(players[id].shell.position.y -0.35) <= 0.15
                     && id != ID
                     && !players[id].shell.hitPlayer
                     && players[ID].alive)
-                {
-                    console.log('yes')
-                    players[id].shell.hitPlayer = true
-                    players[ID].hp -= 50
-                    io.emit('playerHit', id, ID)
-                }
+                    {
+                        console.log('Turret')
+                        option = 1
+                        players[id].shell.hitPlayer = true
+                        if(players[id].he) players[ID].hp -= 0
+                        else players[ID].hp -= 10
+                        io.emit('playerHit', id, ID, option, players[id].he)
+                    }
+                else if( Math.abs(z- 0.9) <= 0.3
+                    && Math.abs(x) <= 0.25
+                    && Math.abs(players[id].shell.position.y -0.35) <= 0.25
+                    && id != ID
+                    && !players[id].shell.hitPlayer
+                    && players[ID].alive)
+                    {
+                        console.log('SuperStructure')
+                        option = 2
+                        players[id].shell.hitPlayer = true
+                        if(players[id].he) players[ID].hp -= 30
+                        else players[ID].hp -= 10
+                        io.emit('playerHit', id, ID, option, players[id].he)
+                    }
+                else if( //hullIntersect[0] != undefined && hullIntersect[0].distance <=  2 * 0.015 * players[id].shell.velocity.length()
+                    Math.abs(z-0.35) <= 1.2
+                    && Math.abs(x) <= 0.25
+                    && Math.abs(players[id].shell.position.y -0.125) <= 0.25
+                    && id != ID
+                    && !players[id].shell.hitPlayer
+                    && players[ID].alive)
+                    {
+                        console.log('Hull')
+                        option = 3
+                        players[id].shell.hitPlayer = true
+                        if(players[id].he) players[ID].hp -= 10
+                        else players[ID].hp -= 20
+                        io.emit('playerHit', id, ID, option, players[id].he)
+                    }
+
 
                 if( players[ID].hp == 0)
                 {
@@ -333,7 +389,8 @@ const serverTick = () =>
         // console.log(players)
         io.emit('positions', (players))  
         // console.log('positions sent')
-    
+
+        // Random Console.logs
     }
 }
 setInterval(serverTick, 15)

@@ -31,12 +31,12 @@ export default class PlayerInfo
             vectorPosition: new THREE.Vector3(0, 0, 0),
             angleXZ: 0,
             angleY: 0,
-            speed: 0.14 * 120,
+            speed: 0.14 * 100,
             speedY: 0,
             speedX: 0,
             speedZ: 0,
             hitPlayer: false,
-            velocity: new THREE.Vector3(0, 0, 0)
+            velocity: new THREE.Vector3(0, 0, 0),
         },
         this.rudderAngle = 0
         this.hp = 100
@@ -47,6 +47,7 @@ export default class PlayerInfo
             new THREE.MeshBasicMaterial()
         )
         this.ship.position.y = 0.25
-
+        this.ap =  true
+        this.he = false
     }
 }

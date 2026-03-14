@@ -11,6 +11,10 @@ const deathScreenPlay = document.querySelector('#deathscreenplay')
 const actualHealth = document.querySelector('#actualhp')
 const whiteHealth = document.querySelector('#whitehp')
 const mapPointer = document.getElementById('mappointer')
+const ap  = document.getElementById('ap')
+const he = document.getElementById('he')
+const heal = document.getElementById('heal')
+const repair = document.getElementById('repair')
 
 export default class Ship
 {
@@ -25,6 +29,9 @@ export default class Ship
         this.gltfLoader = new GLTFLoader()
         this.pointerLock = this.experience.camera.pointerLockControls
         this.controls =  this.experience.camera.controls
+        this.healthTimeline = gsap.timeline()
+        this.he = false
+        this.ifShell = false
 
         this.controls.on = true
 
@@ -50,13 +57,28 @@ export default class Ship
         }
         )
 
-        this.ship1 = new THREE.Mesh(
-            new THREE.BoxGeometry(2.4, 0.5, 0.5),
-            new THREE.MeshBasicMaterial({ wireframe: true, color: '#ff00ee' })
-        )
-        this.ship1.position.y += 0.25
-         this.ship1.position.x += 0.35
-        this.shipGroup.add(this.ship1)
+        // this.ship1 = new THREE.Mesh(
+        //     new THREE.BoxGeometry(0.3, 0.3, 0.3),
+        //     new THREE.MeshBasicMaterial({ wireframe: true, color: '#0800ff' })
+        // )
+        // this.ship1.position.y += 0.35
+        // this.shipGroup.add(this.ship1)
+        // this.shipGroup.add(this.ship1)
+        // this.ship2 = new THREE.Mesh(
+        //     new THREE.BoxGeometry(2.4, 0.25, 0.5),
+        //     new THREE.MeshBasicMaterial({ wireframe: true, color: '#ff00ee' })
+        // )
+        // this.ship2.position.y += 0.125
+        // this.ship2.position.x += 0.5
+        // this.shipGroup.add(this.ship2)
+
+        // this.ship3 = new THREE.Mesh(
+        //     new THREE.BoxGeometry(0.6, 0.25, 0.5),
+        //     new THREE.MeshBasicMaterial({ wireframe: true, color: '#00bbff' })
+        // )
+        // this.ship3.position.y += 0.35
+        // this.ship3.position.x += 0.9
+        // this.shipGroup.add(this.ship3)
 
         this.ambientLight = new THREE.AmbientLight(0xffffff, 10)
         this.scene.add(this.ambientLight)
@@ -69,11 +91,11 @@ export default class Ship
         this.mouse = new THREE.Vector2(0, 0)
 
         //Ship
-        this.ship = new THREE.Mesh(
-            new THREE.BoxGeometry(0.5, 0.5, 0.5),
-            new THREE.MeshBasicMaterial({ wireframe: true, color: '#7b0808' })
-        )
-        this.ship.position.y += 0.25
+        // this.ship = new THREE.Mesh(
+        //     new THREE.BoxGeometry(0.5, 0.5, 0.5),
+        //     new THREE.MeshBasicMaterial({ wireframe: true, color: '#7b0808' })
+        // )
+        // this.ship.position.y += 0.25
 
 
         // Variables for finding initial verticle shell velocity
@@ -156,7 +178,7 @@ export default class Ship
         this.socket.on('player disconnect', (id) =>
         {
             this.scene.remove(this.otherPlayers[id].shipGroup)
-            myGroup.traverse((child) => {
+            this.otherPlayers[id].shipGroup.traverse((child) => {
                 disposeHierarchy(child)
             })
             delete this.otherPlayers[id] 
@@ -169,6 +191,7 @@ export default class Ship
         {
             if(this.controls.on)
             {
+                this.ifShell = true
                 crosshair.style.backgroundColor = 'red'
                 let worldQuaternion = new THREE.Quaternion()
                 this.camera.getWorldQuaternion(worldQuaternion)
@@ -192,7 +215,7 @@ export default class Ship
                 this.deleteShell,
                 4000,
                 shell,
-                socketId
+                socketId,
             )
 
             this.shells[socketId] = shell
@@ -218,7 +241,7 @@ export default class Ship
             crosshair.style.visibility = 'visible'
             this.controls.on = true
             this.pointerLock.lock()
-            this.ship.visible = true
+            this.shipGroup.visible = true
             this.hp = 100
             gsap.to(actualHealth, {width: "100%", duration: 2})
             gsap.to(whiteHealth, {width: "100%", duration: 2})
@@ -240,21 +263,58 @@ export default class Ship
             })
         })
 
-        this.socket.on('playerHit', (shellId, playerId) =>
+        this.socket.on('playerHit', (shellId, playerId, shipPart, ifHe) =>
         {
-            console.log(shellId + " " + playerId + " " + this.socket.id)
+            console.log(shipPart, ifHe)
             if(this.shells[shellId] != undefined) this.shells[shellId].visible = false
             if(playerId == this.socket.id)
             {
-                this.hp -= 50
-                gsap.to(actualHealth, {width: "-=50%", duration: 0.4})
-                gsap.to(whiteHealth, {width: "-=50%", duration: 1, delay: 0.7})
-                if(this.hp == 0)
+                if(ifHe)
+                {
+                    if(shipPart == 1)
+                    {
+                        this.hp -=0
+                    }
+                    else if(shipPart == 2) 
+                    {
+                        this.hp -= 30
+                        gsap.to(actualHealth, {width: "-=30%", duration: 0.4})
+                        gsap.to(whiteHealth, {width: "-=30%", duration: 1, delay: 0.7})
+                    }
+                    else 
+                    {
+                        this.hp -= 10
+                        gsap.to(actualHealth, {width: "-=10%", duration: 0.4})
+                        gsap.to(whiteHealth, {width: "-=10%", duration: 1, delay: 0.7})
+                    }
+                }
+                else
+                {
+                    if(shipPart == 1)
+                    {
+                        this.hp -=10
+                        gsap.to(actualHealth, {width: "-=10%", duration: 0.4})
+                        gsap.to(whiteHealth, {width: "-=10%", duration: 1, delay: 0.7})
+                    }
+                    else if(shipPart == 2) 
+                    {
+                        this.hp -= 10
+                        gsap.to(actualHealth, {width: "-=10%", duration: 0.4})
+                        gsap.to(whiteHealth, {width: "-=10%", duration: 1, delay: 0.7})
+                    }
+                    else 
+                    {
+                        this.hp -= 20
+                        gsap.to(actualHealth, {width: "-=20%", duration: 0.4})
+                        gsap.to(whiteHealth, {width: "-=20%", duration: 1, delay: 0.7})
+                    }
+                }
+                if(this.hp <= 0)
                 {
                     this.controls.on = false
                     this.pointerLock.unlock()
 
-                    this.ship.visible = false
+                    this.shipGroup.visible = false
                     deathScreen.style.visibility = 'visible'
                     document.body.style.cursor = 'auto'
                     crosshair.style.visibility = 'hidden'
@@ -277,7 +337,39 @@ export default class Ship
             }
             else
             {
-                this.otherPlayers[playerId].hp -= 50
+                if(ifHe)
+                {
+                    if(shipPart == 1)
+                    {
+                        this.otherPlayers[playerId].hp -=0
+                    }
+                    else if(shipPart == 2) 
+                    {
+                        this.otherPlayers[playerId].hp -= 30
+                    }
+                    else 
+                    {
+                        this.otherPlayers[playerId].hp -= 10
+                    }
+                }
+                else
+                {
+                    if(shipPart == 1)
+                    {
+                        this.otherPlayers[playerId].hp -=10
+                       
+                    }
+                    else if(shipPart == 2) 
+                    {
+                        this.otherPlayers[playerId].hp -= 10
+                        
+                    }
+                    else 
+                    {
+                        this.otherPlayers[playerId].hp -= 20
+
+                    }
+                }
             }
         })
 
@@ -299,6 +391,48 @@ export default class Ship
             setTimeout(() => {
                 window.location.reload()
             }, 1000)
+        })
+
+        window.addEventListener('keyup', (event) =>
+        {
+            if(event.key === '2' && !this.ifShell)
+            {
+                if(!this.he)
+                {
+                    this.ifShell = true
+                    he.style.outlineColor = '(255, 210, 210)'
+                    he.style.outlineWidth = '2px'
+                    ap.style.outlineColor = 'white'
+                    ap.style.outlineWidth = '1px'
+                    this.he = true
+                    crosshair.style.backgroundColor = 'red'
+                    setTimeout(() =>
+                    {
+                        crosshair.style.backgroundColor = '#1ed1d1'
+                        this.ifShell = false
+                    }, 4000)
+                    this.socket.emit('toHe', this.socket.id)
+                }
+            }
+            else if(event.key === '1' && !this.ifShell)
+            {
+                if(this.he)
+                {
+                    this.ifShell = true
+                    ap.style.outlineColor = '(255, 210, 210)'
+                    ap.style.outlineWidth = '2px'
+                    he.style.outlineColor = 'white'
+                    he.style.outlineWidth = '1px'
+                    this.he = false
+                    crosshair.style.backgroundColor = 'red'
+                    setTimeout(() =>
+                    {
+                        crosshair.style.backgroundColor = '#1ed1d1'
+                        this.ifShell = false
+                    }, 4000)
+                    this.socket.emit('toAp', this.socket.id)
+                }
+            }
         })
     }
 
@@ -331,7 +465,11 @@ export default class Ship
 
     deleteShell = (shell, shellId) =>
     {
-        if(shellId == this.socket.id) crosshair.style.backgroundColor = '#1ed1d1'
+        if(shellId == this.socket.id)
+        {
+                crosshair.style.backgroundColor = '#1ed1d1'
+                this.ifShell = false
+        }
         this.scene.remove(shell)
         shell.material.dispose()
         shell.geometry.dispose()
@@ -346,7 +484,7 @@ export default class Ship
             this.otherPlayers[id].shipGroup.position.z = this.otherPlayers[id].position.z
             this.otherPlayers[id].shipGroup.rotation.y = -this.otherPlayers[id].angle
 
-            if(this.otherPlayers[id].hp == 0)
+            if(this.otherPlayers[id].hp <= 0)
             {
                 this.otherPlayers[id].shipGroup.visible = false
             }
@@ -363,12 +501,14 @@ export default class Ship
         this.raycaster.setFromCamera(this.mouse, this.camera)
         this.rayIntersectOcean = this.raycaster.intersectObject(this.world.ocean.ocean)
 
-        console.log(this.hp)
+        // console.log(this.hp)
 
         // Html
         mapPointer.style.top = 50 - (this.shipGroup.position.x)/2  -  parseFloat(window.getComputedStyle(mapPointer).height)/(2*window.innerWidth*0.18)*100+ "%"
         mapPointer.style.left = 50 + (this.shipGroup.position.z)/2  -  parseFloat(window.getComputedStyle(mapPointer).width)/(2*window.innerWidth*0.18)*100+ "%"
         mapPointer.style.transform = `rotate(${-this.shipGroup.rotation.y / (2*Math.PI) * 360 }deg)`
-        console.log(parseFloat(window.getComputedStyle(mapPointer).height))
+
+        // Random Console.Logs
+        console.log(this.he)
     }
 }

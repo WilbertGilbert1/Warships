@@ -21,7 +21,10 @@ export default class World
         this.shipGroup.add(this.ship.ship)
 
         this.ocean = new Ocean()
+        this.ocean.ocean.visible = false
         this.scene.add(this.ocean.ocean)
+
+        this.scene.fog = new THREE.Fog('#b9b9b9', 20, 30)
 
     //     //GUI
     //     this.gui.addColor(debugObject, 'shipColor')
