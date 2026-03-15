@@ -21,7 +21,7 @@ export default class Ocean
          * Water
          */
         // Geometry
-        const waterGeometry = new THREE.PlaneGeometry(230, 230, 1024, 1024);
+        const waterGeometry = new THREE.PlaneGeometry(130, 130, 1024, 1024);
         const vertexShader =
         `
             uniform float uTime;

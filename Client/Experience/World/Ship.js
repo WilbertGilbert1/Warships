@@ -136,18 +136,22 @@ export default class Ship
         {
             for(const id in this.otherPlayers)
             {
-                this.gltfLoader.load(
-                '/Experience/Models/ship.glb',
-                (gltf) =>
+                if(!this.otherPlayers[id].loaded)
                 {
-                    while(gltf.scene.children.length)
+                    this.gltfLoader.load(
+                    '/Experience/Models/ship.glb',
+                    (gltf) =>
                     {
-                        gltf.scene.children[0].position.x += 0.45
-                        this.otherPlayers[id].shipGroup.add(gltf.scene.children[0])
+                        while(gltf.scene.children.length)
+                        {
+                            gltf.scene.children[0].position.x += 0.45
+                            this.otherPlayers[id].shipGroup.add(gltf.scene.children[0])
+                        }
                     }
+                    )
+                    this.scene.add(this.otherPlayers[id].shipGroup)   
                 }
-                )
-                this.scene.add(this.otherPlayers[id].shipGroup)   
+                this.otherPlayers[id].loaded = true
             }
         }
 
@@ -504,11 +508,11 @@ export default class Ship
         // console.log(this.hp)
 
         // Html
-        mapPointer.style.top = 50 - (this.shipGroup.position.x)/2  -  parseFloat(window.getComputedStyle(mapPointer).height)/(2*window.innerWidth*0.18)*100+ "%"
-        mapPointer.style.left = 50 + (this.shipGroup.position.z)/2  -  parseFloat(window.getComputedStyle(mapPointer).width)/(2*window.innerWidth*0.18)*100+ "%"
+        mapPointer.style.top = 50 - (this.shipGroup.position.x)  -  parseFloat(window.getComputedStyle(mapPointer).height)/(2*window.innerWidth*0.18)*100+ "%"
+        mapPointer.style.left = 50 + (this.shipGroup.position.z)  -  parseFloat(window.getComputedStyle(mapPointer).width)/(2*window.innerWidth*0.18)*100+ "%"
         mapPointer.style.transform = `rotate(${-this.shipGroup.rotation.y / (2*Math.PI) * 360 }deg)`
 
         // Random Console.Logs
-        console.log(this.he)
+        // console.log(this.otherPlayers)
     }
 }

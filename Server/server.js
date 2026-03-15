@@ -89,14 +89,16 @@ io.on('connection', (socket) => {
     players[socket.id].position.x = Math.random() * 20
     players[socket.id].position.z = Math.random() * 20
 
-    players[socket.id].ship.position.x = players[socket.id].position.x
-    players[socket.id].ship.position.z = players[socket.id].position.z
-    scene.add(players[socket.id].ship)
-
     io.emit(
         'initialData', 
         players
     )
+
+    // Disconnect
+    socket.on('disconnect', () => {
+        delete players[socket.id]
+        io.emit('player disconnect', (socket.id))
+    })
 
     // Movement
     socket.on('keydown', (obj) =>
@@ -175,6 +177,9 @@ io.on('connection', (socket) => {
     {
         players[id].hp = 100
         players[id].alive = true
+        players[id].rudderAngle = 0
+        players[id].speed = 0
+        players[id].angle = 0
         players[id].position.x = Math.random() * 20
         players[id].position.z = Math.random() * 20
         io.emit('respawnFromServer', id)
@@ -197,13 +202,6 @@ io.on('connection', (socket) => {
         {
             players[id].shell.ifShell = false
         }, 4000)
-    })
-
-
-    // Disconnect
-    socket.on('disconnect', () => {
-        delete players[socket.id]
-        io.emit('player disconnect', (socket.id))
     })
 })
 
@@ -276,29 +274,26 @@ const serverTick = () =>
         }
         players[id].position.x += players[id].speed * Math.cos(players[id].angle) * 0.015
         players[id].position.z += players[id].speed * Math.sin(players[id].angle) * 0.015
-        players[id].ship.position.x = players[id].position.x
-        players[id].ship.position.z = players[id].position.z
-        players[id].ship.rotation.y = -players[id].angle
 
         //Boarder
-        if(players[id].position.x > 100)
+        if(players[id].position.x > 50)
         {
-            players[id].position.x = 100
+            players[id].position.x = 50
             
         }
-        if(players[id].position.z > 100)
+        if(players[id].position.z > 50)
         {
-            players[id].position.z = 100
+            players[id].position.z = 50
             
         }
-        if(players[id].position.x < - 100)
+        if(players[id].position.x < - 50)
         {
-            players[id].position.x = -100
+            players[id].position.x = -50
             
         }
-        if(players[id].position.z < - 100)
+        if(players[id].position.z < - 50)
         {
-            players[id].position.z = -100
+            players[id].position.z = -50
             
         }
 

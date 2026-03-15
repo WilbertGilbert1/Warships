@@ -20,6 +20,7 @@ export default class Camera
         this.camera = new THREE.PerspectiveCamera(100, this.sizes.width / this.sizes.height, 0.01, 30)
         this.shipGroup.add(this.camera)
         this.camera.position.set(0 , 1.5, 0)
+        this.camera.rotation.y-= Math.PI/2
         this.cameraRotation = this.camera.rotation.y
 
         // this.controls = new OrbitControls(this.camera, this.canvas)

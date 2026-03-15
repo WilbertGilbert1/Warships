@@ -65,5 +65,6 @@ export default class OtherPlayer
             speedVerticle: 0
         }
         this.hp = 100
+        this.loaded = false
     }
 }
