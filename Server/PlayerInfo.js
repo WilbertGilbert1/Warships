@@ -49,6 +49,6 @@ export default class PlayerInfo
         this.ship.position.y = 0.25
         this.ap =  true
         this.he = false
-    
+        this.fire = false
     }
 }

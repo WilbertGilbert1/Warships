@@ -40,7 +40,6 @@ const r = (request, response) => {
     if (filePath) {
         var absPath = filePath
         serveStatic(response, cache, absPath)
-        console.log('sent file ' + absPath)
     }
 }
 
@@ -62,13 +61,11 @@ const serveStatic = (response, cache, absPath) => {
     if (cache[absPath]) {
         sendFile(response, absPath, cache[absPath])
     } else {
-        // Directly read the file and handle errors
         fs.readFile(absPath, (err, data) => {
             if (err) {
                 if (err.code === 'ENOENT') {
                     send404(response)
                 } else {
-                    // Handle other errors (permissions, etc.)
                     response.writeHead(500, { 'Content-Type': 'text/plain' })
                     response.write('Error 500: Internal server error')
                     response.end()
@@ -94,15 +91,15 @@ io.on('connection', (socket) => {
         players
     )
 
-    // Disconnect
     socket.on('disconnect', () => {
-        delete players[socket.id]
-        io.emit('player disconnect', (socket.id))
+        const playerId = socket.id
+        delete players[playerId]
+        io.emit('player disconnect', playerId)
     })
 
-    // Movement
     socket.on('keydown', (obj) =>
     {
+        if (!players[socket.id]) return
         switch (obj)
         {
         case 'w': 
@@ -120,6 +117,7 @@ io.on('connection', (socket) => {
     })
     socket.on('keyup', (obj) =>
     {
+        if (!players[socket.id]) return
         switch (obj)
         {
         case 'w': 
@@ -136,9 +134,9 @@ io.on('connection', (socket) => {
         }
     }) 
 
-    // Shells
     socket.on('click', (event, absoluteRotationY, rayIntersectOcean) =>
     {
+        if (!players[socket.id]) return
         if(!players[socket.id].shell.ifShell)
         {
             players[socket.id].shell.ifShell = true
@@ -162,19 +160,17 @@ io.on('connection', (socket) => {
             players[socket.id].shell.position.y = 1.5
             players[socket.id].shell.angleY = countShellYAngle(absoluteRotationY, rayIntersectOcean, players[socket.id].shell)
             players[socket.id].shell.angleXZ = absoluteRotationY
-            // console.log(players[socket.id].shell.angleY)
             players[socket.id].shell.speedY =  players[socket.id].shell.speed * Math.sin(players[socket.id].shell.angleY)
             players[socket.id].shell.speedZ = players[socket.id].shell.speed * Math.cos(players[socket.id].shell.angleY) * Math.cos( players[socket.id].shell.angleXZ)
             players[socket.id].shell.speedX = players[socket.id].shell.speed * Math.cos(players[socket.id].shell.angleY) * Math.sin( players[socket.id].shell.angleXZ)
-            // console.log(players[socket.id].shell.speedY)
 
             io.emit('shellFired', players[socket.id].shell , socket.id)
         }
     })
 
-    //Handleing respawn
     socket.on('respawn', (id) =>
     {
+        if (!players[id]) return
         players[id].hp = 100
         players[id].alive = true
         players[id].rudderAngle = 0
@@ -187,27 +183,29 @@ io.on('connection', (socket) => {
 
     socket.on('toHe', (id) =>
     {
+        if (!players[id]) return
         players[id].he = true
         players[id].shell.ifShell = true
         setTimeout(() =>
         {
-            players[id].shell.ifShell = false
+            if (players[id]) players[id].shell.ifShell = false
         }, 4000)
     })
     socket.on('toAp', (id) =>
     {
+        if (!players[id]) return
         players[id].he = false
         players[id].shell.ifShell = true
         setTimeout(() =>
         {
-            players[id].shell.ifShell = false
+            if (players[id]) players[id].shell.ifShell = false
         }, 4000)
     })
 })
 
 const countShellYAngle = (absoluteRotationY, rayIntersectOcean, shell) =>
 {
-    if(rayIntersectOcean[0] != undefined)
+    if(rayIntersectOcean != null && rayIntersectOcean[0] != undefined)
     {
     let rayIntersectOceanHorizontal = rayIntersectOcean[0].distance
     let k = rayIntersectOceanHorizontal**2 - 1.5**2
@@ -233,10 +231,9 @@ scene.add(ocean)
 
 const serverTick = () =>
 {
-    // Players
-
     for(const id in players)
     {
+        if (!players[id]) continue
         if(players[id].keys.w) 
         {
             players[id].speed += (0.14 * 5  - players[id].speed)*(1-2.72**(-0.015*8.14)) * 0.02
@@ -275,7 +272,6 @@ const serverTick = () =>
         players[id].position.x += players[id].speed * Math.cos(players[id].angle) * 0.015
         players[id].position.z += players[id].speed * Math.sin(players[id].angle) * 0.015
 
-        //Boarder
         if(players[id].position.x > 50)
         {
             players[id].position.x = 50
@@ -297,30 +293,18 @@ const serverTick = () =>
             
         }
 
-        // console.log(players[id].speed)
-
-        //Shells
         if(players[id].shell.ifShell) 
         {
             players[id].shell.position.x +=  players[id].shell.speedX * 0.015
             players[id].shell.position.z += players[id].shell.speedZ  * 0.015
             players[id].shell.position.y += players[id].shell.speedY * 0.015
             players[id].shell.speedY -= 9.8 * 0.015
-            // console.log(players[id].shell.position.y)
 
             io.emit('shellPositions', players[id].shell.position, id)
 
-            // players[id].shell.vectorPosition.set(players[id].shell.position.x, players[id].shell.position.y, players[id].shell.position.z)
-            // players[id].shell.velocity.set(players[id].shell.speedX, players[id].shell.speedY, players[id].shell.speedZ)
-            // let direction = players[id].shell.velocity.clone().normalize()
-
-            // Shell hits
             for(const ID in players)
             {
-                // raycaster.set(players[id].shell.vectorPosition, direction)
-                // let hullIntersect = raycaster.intersectObject(players[ID].ship)
-                // let intersectOcean = raycaster.intersectObject(ocean)
-                // console.log(intersectOcean[0])
+                if (!players[ID]) continue
                 let x = -(players[id].shell.position.z - players[ID].position.z)*Math.cos(players[ID].angle) + Math.sin(players[ID].angle)*((players[id].shell.position.x - players[ID].position.x))
                 let z = (players[id].shell.position.z - players[ID].position.z)*Math.sin(players[ID].angle) + Math.cos(players[ID].angle)*((players[id].shell.position.x - players[ID].position.x))
                 let option = 0
@@ -331,10 +315,12 @@ const serverTick = () =>
                     && !players[id].shell.hitPlayer
                     && players[ID].alive)
                     {
-                        console.log('Turret')
                         option = 1
                         players[id].shell.hitPlayer = true
-                        if(players[id].he) players[ID].hp -= 0
+                        if(players[id].he)
+                            {
+                                players[ID].hp -= 0
+                            } 
                         else players[ID].hp -= 10
                         io.emit('playerHit', id, ID, option, players[id].he)
                     }
@@ -345,14 +331,16 @@ const serverTick = () =>
                     && !players[id].shell.hitPlayer
                     && players[ID].alive)
                     {
-                        console.log('SuperStructure')
                         option = 2
                         players[id].shell.hitPlayer = true
-                        if(players[id].he) players[ID].hp -= 30
+                        if(players[id].he)
+                            {
+                                players[ID].hp -= 30
+                            } 
                         else players[ID].hp -= 10
                         io.emit('playerHit', id, ID, option, players[id].he)
                     }
-                else if( //hullIntersect[0] != undefined && hullIntersect[0].distance <=  2 * 0.015 * players[id].shell.velocity.length()
+                else if( 
                     Math.abs(z-0.35) <= 1.2
                     && Math.abs(x) <= 0.25
                     && Math.abs(players[id].shell.position.y -0.125) <= 0.25
@@ -360,35 +348,33 @@ const serverTick = () =>
                     && !players[id].shell.hitPlayer
                     && players[ID].alive)
                     {
-                        console.log('Hull')
                         option = 3
                         players[id].shell.hitPlayer = true
-                        if(players[id].he) players[ID].hp -= 10
+                        if(players[id].he)
+                            {
+                                players[ID].hp -= 10
+                            } 
                         else players[ID].hp -= 20
                         io.emit('playerHit', id, ID, option, players[id].he)
                     }
 
 
-                if( players[ID].hp == 0)
+                if( players[ID].hp <= 0)
                 {
                      players[ID].speed = 0
                      players[ID].rudderAngle = 0
                      players[ID].angle = 0
                      players[ID].alive = false
+                     players[ID].fire = false
                      
-                     players[id].kills ++ 
+                     if (players[id]) players[id].kills ++ 
                 }
+
+                if(players[ID].fire) players[ID].hp -= 0.083
             }
         }
 
-        // console.log(players)
         io.emit('positions', (players))  
-        // console.log('positions sent')
-
-        // Random Console.logs
     }
 }
 setInterval(serverTick, 15)
-
-
-

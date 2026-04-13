@@ -33,11 +33,11 @@ export default class Experience
        
         this.renderer = new Renderer()
 
-        this.axesHelper = new THREE.AxesHelper(5)
-        this.scene.add(this.axesHelper)
-        this.axesHelper.position.y += 0.01
-        this.axesHelper.position.z += 0.01
-        this.axesHelper.position.x += 0.01
+        // this.axesHelper = new THREE.AxesHelper(5)
+        // this.scene.add(this.axesHelper)
+        // this.axesHelper.position.y += 0.01
+        // this.axesHelper.position.z += 0.01
+        // this.axesHelper.position.x += 0.01
 
         // this.gridHelper = new THREE.GridHelper(200, 200)
         // this.scene.add(this.gridHelper)
