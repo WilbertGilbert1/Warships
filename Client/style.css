@@ -602,8 +602,8 @@ table, td, th {
     width: 60%;
     aspect-ratio: 3/1;
     z-index: 101;
-    background-color: rgb(0, 191, 255, 0.95);
-    border: 2px solid black;
+    /* background-color: rgb(0, 191, 255, 0.95); */
+    /* border: 2px solid black; */
     border-radius: 5px;
 }
 
@@ -711,7 +711,7 @@ table, td, th {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 80%;
+    font-size: 1.8rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -723,6 +723,12 @@ table, td, th {
     white-space: nowrap;
     text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.2);
     letter-spacing: 0.02em;
+}
+
+#mainmenuplaybutton:hover {
+    background: rgb(0, 79, 105);
+    transform: translateY(2px, 2px);
+    box-shadow: 8px 8px 0 #c9a82c;
 }
 
 /* Old stats box hidden */
