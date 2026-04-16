@@ -81,20 +81,67 @@ const serveStatic = (response, cache, absPath) => {
 let players = {}
 const scene = new THREE.Scene()
 
+// CHANGED: Helper to compute leaderboard (top 10)
+const getLeaderboard = () => {
+    const entries = []
+    for (const id in players) {
+        const p = players[id]
+        if (!p.alive) continue // only alive players
+        const timeAlive = (Date.now() - p.spawnTime) / 1000
+        entries.push({
+            id,
+            username: p.username,
+            kills: p.kills,
+            damage: p.damageDealt,
+            timeAlive
+        })
+    }
+    // sort: kills desc, damage desc, timeAlive desc
+    entries.sort((a, b) => {
+        if (a.kills !== b.kills) return b.kills - a.kills
+        if (a.damage !== b.damage) return b.damage - a.damage
+        return b.timeAlive - a.timeAlive
+    })
+    return entries.slice(0, 10)
+}
+
+// CHANGED: Broadcast leaderboard to all clients
+const broadcastLeaderboard = () => {
+    io.emit('leaderboard', getLeaderboard())
+}
+
+// CHANGED: Upgrade stat multipliers
+const getUpgradeMultiplier = (level, base = 1, increment = 0.1) => {
+    return base + level * increment
+}
+
 io.on('connection', (socket) => {
-    players[socket.id] = new PlayerInfo(socket.id)
+    // CHANGED: Receive username from client
+    let username = 'Anonymous'
+    socket.on('setUsername', (name) => {
+        username = name || 'Anonymous'
+        if (players[socket.id]) {
+            players[socket.id].username = username
+        }
+        broadcastLeaderboard()
+    })
+
+    players[socket.id] = new PlayerInfo(socket.id, username)
     players[socket.id].position.x = Math.random() * 20
     players[socket.id].position.z = Math.random() * 20
+    players[socket.id].spawnTime = Date.now()
 
     io.emit(
         'initialData', 
         players
     )
+    broadcastLeaderboard() // CHANGED: send initial leaderboard
 
     socket.on('disconnect', () => {
         const playerId = socket.id
         delete players[playerId]
         io.emit('player disconnect', playerId)
+        broadcastLeaderboard() // CHANGED
     })
 
     socket.on('keydown', (obj) =>
@@ -171,14 +218,19 @@ io.on('connection', (socket) => {
     socket.on('respawn', (id) =>
     {
         if (!players[id]) return
-        players[id].hp = 100
+        players[id].hp = 100 + players[id].upgrades.health * 10 // CHANGED: apply health upgrade
+        players[id].maxHp = players[id].hp
         players[id].alive = true
         players[id].rudderAngle = 0
         players[id].speed = 0
         players[id].angle = 0
         players[id].position.x = Math.random() * 20
         players[id].position.z = Math.random() * 20
+        players[id].damageDealt = 0 // CHANGED: reset damage on respawn
+        players[id].kills = 0        // CHANGED: reset kills on respawn
+        players[id].spawnTime = Date.now() // CHANGED
         io.emit('respawnFromServer', id)
+        broadcastLeaderboard() // CHANGED
     })
 
     socket.on('toHe', (id) =>
@@ -200,6 +252,46 @@ io.on('connection', (socket) => {
         {
             if (players[id]) players[id].shell.ifShell = false
         }, 4000)
+    })
+
+    // CHANGED: Chat message handling
+    socket.on('chatMessage', (message) => {
+        if (!players[socket.id]) return
+        const sender = players[socket.id].username
+        const lb = getLeaderboard()
+        const isTop = lb.length > 0 && lb[0].id === socket.id
+        io.emit('chatMessage', { sender, message, isTop })
+    })
+
+    // CHANGED: Upgrade request
+    socket.on('upgrade', (stat) => {
+        const player = players[socket.id]
+        if (!player) return
+        const validStats = ['speed', 'turnSpeed', 'acceleration', 'apDamage', 'heDamage', 'health']
+        if (!validStats.includes(stat)) return
+        if (player.upgrades[stat] >= 8) return
+        if (player.coins < 50) return
+
+        player.coins -= 50
+        player.upgrades[stat]++
+
+        // Apply health upgrade immediately
+        if (stat === 'health') {
+            const newMax = 100 + player.upgrades.health * 10
+            const diff = newMax - player.maxHp
+            player.maxHp = newMax
+            player.hp = Math.min(player.hp + diff, newMax)
+        }
+
+        // Send updated player data to client
+        socket.emit('upgradeResult', { 
+            success: true, 
+            stat, 
+            level: player.upgrades[stat],
+            coins: player.coins,
+            hp: player.hp,
+            maxHp: player.maxHp
+        })
     })
 })
 
@@ -234,147 +326,156 @@ const serverTick = () =>
     for(const id in players)
     {
         if (!players[id]) continue
-        if(players[id].keys.w) 
+        const p = players[id]
+        // CHANGED: Apply upgrade multipliers to movement
+        const speedMultiplier = getUpgradeMultiplier(p.upgrades.speed, 1, 0.1)
+        const turnMultiplier = getUpgradeMultiplier(p.upgrades.turnSpeed, 1, 0.1)
+        const accelMultiplier = getUpgradeMultiplier(p.upgrades.acceleration, 1, 0.1)
+
+        if(p.keys.w) 
         {
-            players[id].speed += (0.14 * 5  - players[id].speed)*(1-2.72**(-0.015*8.14)) * 0.02
-            
+            p.speed += (0.14 * 5  - p.speed)*(1-2.72**(-0.015*8.14)) * 0.02 * accelMultiplier
         }
-        if(players[id].keys.s)
+        if(p.keys.s)
         {
-            players[id].speed -= 0.4*(0.14 * 5  - players[id].speed)*(1-2.72**(-0.015*8.14)) * 0.02
+            p.speed -= 0.4*(0.14 * 5  - p.speed)*(1-2.72**(-0.015*8.14)) * 0.02 * accelMultiplier
         } 
-        if(players[id].keys.a && players[id].rudderAngle > -0.005)
+        if(p.keys.a && p.rudderAngle > -0.005)
         {
-            players[id].rudderAngle -= 0.00002
+            p.rudderAngle -= 0.00002 * turnMultiplier
         }
-        if(players[id].keys.d && players[id].rudderAngle < 0.005)
+        if(p.keys.d && p.rudderAngle < 0.005)
         {
-            players[id].rudderAngle += 0.00002
+            p.rudderAngle += 0.00002 * turnMultiplier
         }
-        if(!players[id].keys.d && !players[id].keys.a)
+        if(!p.keys.d && !p.keys.a)
         {
-            if(players[id].rudderAngle > 0) players[id].rudderAngle -= 0.00001
-            else if(players[id].rudderAngle < 0) players[id].rudderAngle += 0.00001
+            if(p.rudderAngle > 0) p.rudderAngle -= 0.00001 * turnMultiplier
+            else if(p.rudderAngle < 0) p.rudderAngle += 0.00001 * turnMultiplier
         }
        
-        if(players[id].speed > 0 && players[id].speed< 1)
+        if(p.speed > 0 && p.speed < 1)
         {
-            players[id].angle += players[id].rudderAngle * players[id].speed
+            p.angle += p.rudderAngle * p.speed * turnMultiplier
         }
-        else if(players[id].speed > 1)
+        else if(p.speed > 1)
         {
-            players[id].angle += players[id].rudderAngle / players[id].speed
+            p.angle += (p.rudderAngle / p.speed) * turnMultiplier
         }
-        else if(players[id].speed < 0)
+        else if(p.speed < 0)
         {
-            players[id].angle -= players[id].rudderAngle *players[id].speed
+            p.angle -= p.rudderAngle * p.speed * turnMultiplier
         }
-        players[id].position.x += players[id].speed * Math.cos(players[id].angle) * 0.015
-        players[id].position.z += players[id].speed * Math.sin(players[id].angle) * 0.015
+        p.position.x += p.speed * Math.cos(p.angle) * 0.015 * speedMultiplier
+        p.position.z += p.speed * Math.sin(p.angle) * 0.015 * speedMultiplier
 
-        if(players[id].position.x > 50)
-        {
-            players[id].position.x = 50
-            
-        }
-        if(players[id].position.z > 50)
-        {
-            players[id].position.z = 50
-            
-        }
-        if(players[id].position.x < - 50)
-        {
-            players[id].position.x = -50
-            
-        }
-        if(players[id].position.z < - 50)
-        {
-            players[id].position.z = -50
-            
-        }
+        if(p.position.x > 50) p.position.x = 50
+        if(p.position.z > 50) p.position.z = 50
+        if(p.position.x < -50) p.position.x = -50
+        if(p.position.z < -50) p.position.z = -50
 
-        if(players[id].shell.ifShell) 
+        if(p.shell.ifShell) 
         {
-            players[id].shell.position.x +=  players[id].shell.speedX * 0.015
-            players[id].shell.position.z += players[id].shell.speedZ  * 0.015
-            players[id].shell.position.y += players[id].shell.speedY * 0.015
-            players[id].shell.speedY -= 9.8 * 0.015
+            p.shell.position.x += p.shell.speedX * 0.015
+            p.shell.position.z += p.shell.speedZ * 0.015
+            p.shell.position.y += p.shell.speedY * 0.015
+            p.shell.speedY -= 9.8 * 0.015
 
-            io.emit('shellPositions', players[id].shell.position, id)
+            io.emit('shellPositions', p.shell.position, id)
 
             for(const ID in players)
             {
                 if (!players[ID]) continue
-                let x = -(players[id].shell.position.z - players[ID].position.z)*Math.cos(players[ID].angle) + Math.sin(players[ID].angle)*((players[id].shell.position.x - players[ID].position.x))
-                let z = (players[id].shell.position.z - players[ID].position.z)*Math.sin(players[ID].angle) + Math.cos(players[ID].angle)*((players[id].shell.position.x - players[ID].position.x))
+                const target = players[ID]
+                let x = -(p.shell.position.z - target.position.z)*Math.cos(target.angle) + Math.sin(target.angle)*((p.shell.position.x - target.position.x))
+                let z = (p.shell.position.z - target.position.z)*Math.sin(target.angle) + Math.cos(target.angle)*((p.shell.position.x - target.position.x))
                 let option = 0
+                let rawDamage = 0
                 if( Math.abs(z) <= 0.15
                     && Math.abs(x) <= 0.15
-                    && Math.abs(players[id].shell.position.y -0.35) <= 0.15
+                    && Math.abs(p.shell.position.y -0.35) <= 0.15
                     && id != ID
-                    && !players[id].shell.hitPlayer
-                    && players[ID].alive)
+                    && !p.shell.hitPlayer
+                    && target.alive)
                     {
                         option = 1
-                        players[id].shell.hitPlayer = true
-                        if(players[id].he)
-                            {
-                                players[ID].hp -= 0
-                            } 
-                        else players[ID].hp -= 10
-                        io.emit('playerHit', id, ID, option, players[id].he)
+                        p.shell.hitPlayer = true
+                        if(p.he) {
+                            rawDamage = 0
+                        } else {
+                            const apMult = getUpgradeMultiplier(p.upgrades.apDamage, 1, 0.1)
+                            rawDamage = Math.floor(10 * apMult)
+                        }
                     }
                 else if( Math.abs(z- 0.9) <= 0.3
                     && Math.abs(x) <= 0.25
-                    && Math.abs(players[id].shell.position.y -0.35) <= 0.25
+                    && Math.abs(p.shell.position.y -0.35) <= 0.25
                     && id != ID
-                    && !players[id].shell.hitPlayer
-                    && players[ID].alive)
+                    && !p.shell.hitPlayer
+                    && target.alive)
                     {
                         option = 2
-                        players[id].shell.hitPlayer = true
-                        if(players[id].he)
-                            {
-                                players[ID].hp -= 30
-                            } 
-                        else players[ID].hp -= 10
-                        io.emit('playerHit', id, ID, option, players[id].he)
+                        p.shell.hitPlayer = true
+                        if(p.he) {
+                            const heMult = getUpgradeMultiplier(p.upgrades.heDamage, 1, 0.1)
+                            rawDamage = Math.floor(30 * heMult)
+                        } else {
+                            const apMult = getUpgradeMultiplier(p.upgrades.apDamage, 1, 0.1)
+                            rawDamage = Math.floor(10 * apMult)
+                        }
                     }
                 else if( 
                     Math.abs(z-0.35) <= 1.2
                     && Math.abs(x) <= 0.25
-                    && Math.abs(players[id].shell.position.y -0.125) <= 0.25
+                    && Math.abs(p.shell.position.y -0.125) <= 0.25
                     && id != ID
-                    && !players[id].shell.hitPlayer
-                    && players[ID].alive)
+                    && !p.shell.hitPlayer
+                    && target.alive)
                     {
                         option = 3
-                        players[id].shell.hitPlayer = true
-                        if(players[id].he)
-                            {
-                                players[ID].hp -= 10
-                            } 
-                        else players[ID].hp -= 20
-                        io.emit('playerHit', id, ID, option, players[id].he)
+                        p.shell.hitPlayer = true
+                        if(p.he) {
+                            const heMult = getUpgradeMultiplier(p.upgrades.heDamage, 1, 0.1)
+                            rawDamage = Math.floor(10 * heMult)
+                        } else {
+                            const apMult = getUpgradeMultiplier(p.upgrades.apDamage, 1, 0.1)
+                            rawDamage = Math.floor(20 * apMult)
+                        }
                     }
 
-
-                if( players[ID].hp <= 0)
-                {
-                     players[ID].speed = 0
-                     players[ID].rudderAngle = 0
-                     players[ID].angle = 0
-                     players[ID].alive = false
-                     players[ID].fire = false
-                     
-                     if (players[id]) players[id].kills ++ 
+                if (rawDamage > 0 && p && target.alive) {
+                    // CHANGED: Cap damage to remaining HP
+                    const actualDamage = Math.min(rawDamage, target.hp)
+                    target.hp -= actualDamage
+                    p.damageDealt += actualDamage
+                    io.emit('playerHit', id, ID, option, p.he)
                 }
 
-                if(players[ID].fire) players[ID].hp -= 0.083
+                // FIXED: Only process kill once when HP drops to 0 and player was alive
+                if(target.alive && target.hp <= 0)
+                {
+                     target.speed = 0
+                     target.rudderAngle = 0
+                     target.angle = 0
+                     target.alive = false
+                     target.fire = false
+                     
+                     if (p) {
+                        p.kills ++
+                        p.coins += 100 // CHANGED: earn coins per kill
+                        const killerName = p.username
+                        const victimName = target.username
+                        io.emit('killFeed', { killer: killerName, victim: victimName })
+                        broadcastLeaderboard()
+                     }
+                }
+
+                if(target.fire) target.hp -= 0.083
             }
         }
 
-        io.emit('positions', (players))  
+        io.emit('positions', players)  
     }
+    broadcastLeaderboard()
 }
 setInterval(serverTick, 15)
