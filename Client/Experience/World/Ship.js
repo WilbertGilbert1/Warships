@@ -17,6 +17,11 @@ const heal = document.getElementById('heal')
 const repair = document.getElementById('repair')
 const nicknameInput = document.getElementById('nicknameInput')
 
+// CHANGED: UI elements references
+const playerNameDisplay = document.getElementById('playerNameDisplay')
+const killCountSpan = document.getElementById('killCount')
+const damageCountSpan = document.getElementById('damageCount')
+const coinCountSpan = document.getElementById('coinCount')
 
 export default class Ship
 {
@@ -38,6 +43,10 @@ export default class Ship
         this.fire = false
 
         this.controls.on = true
+        window.gameControlsActive = true
+
+        // CHANGED: Pass pointerLock reference to Experience for chat
+        this.experience.pointerLock = this.pointerLock
 
         this.position = 
         {
@@ -47,6 +56,24 @@ export default class Ship
             angle: 0
         }
         this.hp = 100
+        this.maxHp = 100
+        this.kills = 0
+        this.damage = 0
+        this.coins = 0
+
+        this.upgrades = {
+            speed: 0,
+            turnSpeed: 0,
+            acceleration: 0,
+            apDamage: 0,
+            heDamage: 0,
+            health: 0
+        }
+
+        let username = nicknameInput.value.trim()
+        if (username === '') username = 'Player'
+        playerNameDisplay.textContent = username
+        this.socket.emit('setUsername', username)
 
         this.gltfLoader.load(
         '/Experience/Models/ship.glb',
@@ -71,13 +98,36 @@ export default class Ship
         this.horizontalLengthToShellTarget = 0
         this.shellAngle = 0
 
+        // Key handlers ignore chat input
         window.addEventListener('keydown', (event)=>
         {
+            const chatInput = document.getElementById('chatInput')
+            if (document.activeElement === chatInput) return
             this.socket.emit('keydown', (event.key))
         })
         window.addEventListener('keyup', (event)=>
         {
+            const chatInput = document.getElementById('chatInput')
+            if (document.activeElement === chatInput) return
             this.socket.emit('keyup', (event.key))
+        })
+
+        // Upgrade keys
+        window.addEventListener('keydown', (e) => {
+            const chatInput = document.getElementById('chatInput')
+            if (document.activeElement === chatInput) return
+            const key = e.key
+            const statMap = {
+                '5': 'speed',
+                '6': 'turnSpeed',
+                '7': 'acceleration',
+                '8': 'apDamage',
+                '9': 'heDamage',
+                '0': 'health'
+            }
+            if (statMap[key]) {
+                this.socket.emit('upgrade', statMap[key])
+            }
         })
 
         this.otherPlayers = {}
@@ -91,6 +141,18 @@ export default class Ship
                     if(id != this.socket.id)
                     {
                         this.otherPlayers[id] = new OtherPlayer(id)
+                    } else {
+                        this.kills = players[id].kills || 0
+                        this.damage = players[id].damageDealt || 0
+                        this.coins = players[id].coins || 0
+                        this.hp = players[id].hp
+                        this.maxHp = players[id].maxHp || 100
+                        if (players[id].upgrades) {
+                            this.upgrades = {...players[id].upgrades}
+                        }
+                        this.updatePersonalStats()
+                        this.updateUpgradeBars()
+                        this.updateHealthBar()
                     }
                 }
                 addPlayers()
@@ -129,6 +191,19 @@ export default class Ship
                     this.position.x = players[id].position.x
                     this.position.z = players[id].position.z
                     this.angle = players[id].angle
+                    if (players[id].kills !== undefined) this.kills = players[id].kills
+                    if (players[id].damageDealt !== undefined) this.damage = players[id].damageDealt
+                    if (players[id].coins !== undefined) this.coins = players[id].coins
+                    if (players[id].hp !== undefined) {
+                        this.hp = players[id].hp
+                        this.maxHp = players[id].maxHp || 100
+                        this.updateHealthBar()
+                    }
+                    if (players[id].upgrades) {
+                        this.upgrades = {...players[id].upgrades}
+                        this.updateUpgradeBars()
+                    }
+                    this.updatePersonalStats()
                 }
                 else
                 {
@@ -136,6 +211,20 @@ export default class Ship
                     this.otherPlayers[id].position.z = players[id].position.z
                     this.otherPlayers[id].angle = players[id].angle
                 }
+            }
+        })
+
+        this.socket.on('upgradeResult', (data) => {
+            if (data.success) {
+                this.upgrades[data.stat] = data.level
+                this.coins = data.coins
+                if (data.hp !== undefined) {
+                    this.hp = data.hp
+                    this.maxHp = data.maxHp
+                    this.updateHealthBar()
+                }
+                this.updatePersonalStats()
+                this.updateUpgradeBars()
             }
         })
 
@@ -208,30 +297,20 @@ export default class Ship
         deathScreenPlay.addEventListener('click', ()=>
         {
             this.socket.emit('respawn', this.socket.id)
-            deathScreenPlay.style.zindex = '0'
             deathScreen.style.visibility = 'hidden'
             crosshair.style.visibility = 'visible'
             this.controls.on = true
+            window.gameControlsActive = true
             this.pointerLock.lock()
             this.shipGroup.visible = true
-            this.hp = 100
-            gsap.to(actualHealth, {width: "100%", duration: 2})
-            gsap.to(whiteHealth, {width: "100%", duration: 2})
+            this.hp = this.maxHp
+            this.updateHealthBar()
             actualHealth.style.visibility = 'visible'
             whiteHealth.style.visibility = 'visible'
 
-            window.addEventListener('click', (event) =>
-            {
-                if(this.controls.on)
-                {
-                    crosshair.style.backgroundColor = 'red'
-                    let worldQuaternion = new THREE.Quaternion()
-                    this.camera.getWorldQuaternion(worldQuaternion)
-                    let worldEuler = new THREE.Euler().setFromQuaternion(worldQuaternion, 'YXZ')
-                    let absoluteRotationY = worldEuler.y + Math.PI
-                    this.socket.emit('click', event, absoluteRotationY, this.rayIntersectOcean)
-                }
-            })
+            this.kills = 0
+            this.damage = 0
+            this.updatePersonalStats()
         })
 
         this.socket.on('playerHit', (shellId, playerId, shipPart, ifHe) =>
@@ -239,125 +318,7 @@ export default class Ship
             if(this.shells[shellId] != undefined) this.shells[shellId].visible = false
             if(playerId == this.socket.id)
             {
-                if(ifHe)
-                {
-                    this.fire = playerId.fire
-                    if(shipPart == 1)
-                    {
-                        this.hp -=0
-                    }
-                    else if(shipPart == 2) 
-                    {
-                        this.hp -= 30
-                        if(this.hp >= 0)
-                        {
-                            gsap.to(actualHealth, {width: "-=30%", duration: 0.4})
-                            gsap.to(whiteHealth, {width: "-=30%", duration: 1, delay: 0.7})
-                        }
-                        else
-                        {
-                            gsap.to(actualHealth, {width: "0%", duration: 0.4})
-                            gsap.to(whiteHealth, {width: "0%", duration: 1, delay: 0.7})
-                        }
-                        
-                    }
-                    else 
-                    {
-                        this.hp -= 10
-                        if(this.hp >= 0)
-                        {
-                            gsap.to(actualHealth, {width: "-=10%", duration: 0.4})
-                            gsap.to(whiteHealth, {width: "-=10%", duration: 1, delay: 0.7})
-                        }
-                        else
-                        {
-                            gsap.to(actualHealth, {width: "0%", duration: 0.4})
-                            gsap.to(whiteHealth, {width: "0%", duration: 1, delay: 0.7})
-                        }
-                    }
-                }
-                else
-                {
-                    if(shipPart == 1)
-                    {
-                        this.hp -=10
-                        if(this.hp >= 0)
-                        {
-                            gsap.to(actualHealth, {width: this.hp + '%', duration: 0.4})
-                            gsap.to(whiteHealth, {width: this.hp + '%', duration: 1, delay: 0.7})
-                        }
-                        else
-                        {
-                            gsap.to(actualHealth, {width: "0%", duration: 0.4})
-                            gsap.to(whiteHealth, {width: "0%", duration: 1, delay: 0.7})
-                        }
-                    }
-                    else if(shipPart == 2) 
-                    {
-                        this.hp -= 10
-                        if(this.hp >= 0)
-                        {
-                            gsap.to(actualHealth, {width: this.hp + '%', duration: 0.4})
-                            gsap.to(whiteHealth, {width: this.hp + '%', duration: 1, delay: 0.7})
-                        }
-                        else
-                        {
-                            gsap.to(actualHealth, {width: "0%", duration: 0.4})
-                            gsap.to(whiteHealth, {width: "0%", duration: 1, delay: 0.7})
-                        }
-                    }
-                    else 
-                    {
-                        this.hp -= 20
-                        if(this.hp >= 0)
-                        {
-                            gsap.to(actualHealth, {width: this.hp + '%', duration: 0.4})
-                            gsap.to(whiteHealth, {width: this.hp + '%', duration: 1, delay: 0.7})
-                        }
-                        else
-                        {
-                            gsap.to(actualHealth, {width: "0%", duration: 0.4})
-                            gsap.to(whiteHealth, {width: "0%", duration: 1, delay: 0.7})
-                        }
-                    }
-                }
-                
-            }
-            else
-            {
-                if(ifHe)
-                {
-                    if(shipPart == 1)
-                    {
-                        this.otherPlayers[playerId].hp -=0
-                    }
-                    else if(shipPart == 2) 
-                    {
-                        this.otherPlayers[playerId].hp -= 30
-                    }
-                    else 
-                    {
-                        this.otherPlayers[playerId].hp -= 10
-                    }
-                }
-                else
-                {
-                    if(shipPart == 1)
-                    {
-                        this.otherPlayers[playerId].hp -=10
-                       
-                    }
-                    else if(shipPart == 2) 
-                    {
-                        this.otherPlayers[playerId].hp -= 10
-                        
-                    }
-                    else 
-                    {
-                        this.otherPlayers[playerId].hp -= 20
-
-                    }
-                }
+                this.updateHealthBar()
             }
         })
 
@@ -382,19 +343,20 @@ export default class Ship
 
         window.addEventListener('keyup', (event) =>
         {
+            const chatInput = document.getElementById('chatInput')
+            if (document.activeElement === chatInput) return
             if(event.key === '2' && !this.ifShell)
             {
                 if(!this.he)
                 {
                     this.ifShell = true
-                    he.style.outlineColor = '(255, 210, 210)'
+                    he.style.outlineColor = 'rgb(255, 210, 210)'
                     he.style.outlineWidth = '2px'
                     ap.style.outlineColor = 'white'
                     ap.style.outlineWidth = '1px'
                     this.he = true
                     crosshair.style.backgroundColor = 'red'
-                    setTimeout(() =>
-                    {
+                    setTimeout(() => {
                         crosshair.style.backgroundColor = '#1ed1d1'
                         this.ifShell = false
                     }, 4000)
@@ -406,14 +368,13 @@ export default class Ship
                 if(this.he)
                 {
                     this.ifShell = true
-                    ap.style.outlineColor = '(255, 210, 210)'
+                    ap.style.outlineColor = 'rgb(255, 210, 210)'
                     ap.style.outlineWidth = '2px'
                     he.style.outlineColor = 'white'
                     he.style.outlineWidth = '1px'
                     this.he = false
                     crosshair.style.backgroundColor = 'red'
-                    setTimeout(() =>
-                    {
+                    setTimeout(() => {
                         crosshair.style.backgroundColor = '#1ed1d1'
                         this.ifShell = false
                     }, 4000)
@@ -423,26 +384,39 @@ export default class Ship
         })
     }
 
+    updatePersonalStats() {
+        killCountSpan.textContent = this.kills
+        damageCountSpan.textContent = this.damage
+        coinCountSpan.textContent = this.coins
+    }
+
+    updateUpgradeBars() {
+        for (const stat in this.upgrades) {
+            const bar = document.getElementById(`upgrade-${stat}`)
+            if (bar) {
+                bar.style.width = (this.upgrades[stat] / 8 * 100) + '%'
+            }
+        }
+    }
+
+    updateHealthBar() {
+        const percent = (this.hp / this.maxHp) * 100
+        actualHealth.style.width = percent + '%'
+        whiteHealth.style.width = percent + '%'
+    }
+
     disposeHierarchy = (child) =>
     {
         if( child instanceof THREE.Mesh)
         {
-            if(child.geometry)
-            {
-                child.geometry.dispose()
-            }
-
-            if(child.material) child.material.dispose
-
-            if (child.parent) {
-                child.parent.remove(child);
-            }
+            if(child.geometry) child.geometry.dispose()
+            if(child.material) child.material.dispose()
+            if (child.parent) child.parent.remove(child)
         }
     }
 
     fireShell = (shellId, shell) =>
     {
-        
         shell.position.y += 0.5
         shell.position.z = shellId.position.z
         shell.position.x = shellId.position.x
@@ -453,8 +427,8 @@ export default class Ship
     {
         if(shellId == this.socket.id)
         {
-                crosshair.style.backgroundColor = '#1ed1d1'
-                this.ifShell = false
+            crosshair.style.backgroundColor = '#1ed1d1'
+            this.ifShell = false
         }
         this.scene.remove(shell)
         shell.material.dispose()
@@ -470,14 +444,7 @@ export default class Ship
             this.otherPlayers[id].shipGroup.position.z = this.otherPlayers[id].position.z
             this.otherPlayers[id].shipGroup.rotation.y = -this.otherPlayers[id].angle
 
-            if(this.otherPlayers[id].hp <= 0)
-            {
-                this.otherPlayers[id].shipGroup.visible = false
-            }
-            else 
-            {
-                this.otherPlayers[id].shipGroup.visible = true
-            }
+            this.otherPlayers[id].shipGroup.visible = this.otherPlayers[id].hp > 0
 
             if(this.otherPlayers[id].fire) this.otherPlayers[id].fire -= 0.083
         }
@@ -495,26 +462,12 @@ export default class Ship
         if(this.hp <= 0)
         {
             this.controls.on = false
+            window.gameControlsActive = false
             this.pointerLock.unlock()
-
             this.shipGroup.visible = false
             deathScreen.style.visibility = 'visible'
             document.body.style.cursor = 'auto'
             crosshair.style.visibility = 'hidden'
-            
-
-            window.removeEventListener('click', (event) =>
-            {
-                if(this.controls.on)
-                {
-                    crosshair.style.backgroundColor = 'red'
-                    let worldQuaternion = new THREE.Quaternion()
-                    this.camera.getWorldQuaternion(worldQuaternion)
-                    let worldEuler = new THREE.Euler().setFromQuaternion(worldQuaternion, 'YXZ')
-                    let absoluteRotationY = worldEuler.y + Math.PI
-                    this.socket.emit('click', event, absoluteRotationY, this.rayIntersectOcean)
-                }
-            })
         }
     }
 }
