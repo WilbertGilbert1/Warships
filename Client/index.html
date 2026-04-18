@@ -17,11 +17,14 @@
     <title>Warships</title>
 </head>
 <body>
+    <audio autoplay loop>
+    <source src="./Sounds/titan-games-zvuk-plyazha.mp3" type="audio/mpeg">
+    </audio>
+
     <div id="crosshair"></div>
     <canvas class="webgl"></canvas>
     <script type="module" src="./script.js"></script>
 
-    <!-- CHANGED: Respawn screen styled -->
     <div id="deathscreen">
         <div id="deathscreenContent">
             <h2>YOU SANK</h2>
@@ -29,7 +32,6 @@
         </div>
     </div>
 
-    <!-- CHANGED: Personal stats box (top left) -->
     <div id="personalStats">
         <div id="playerNameDisplay">Player</div>
         <div class="statRow"><span>Kills:</span> <span id="killCount">0</span></div>
@@ -37,8 +39,7 @@
         <div class="statRow"><span>Coins:</span> <span id="coinCount">0</span> 🪙</div>
     </div>
 
-    <!-- CHANGED: Upgrades panel -->
-    <div id="upgradesPanel">
+     <div id="upgradesPanel">
         <div class="upgradeTitle">UPGRADES (keys 5-0)</div>
         <div class="upgradeRow" data-stat="speed">
             <span class="upgradeName">Speed [5]</span>

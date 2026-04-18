@@ -41,6 +41,7 @@ export default class Ship
         this.he = false
         this.ifShell = false
         this.fire = false
+        this.shellSound = new Audio('../../Sounds/Cannon_Fire_Sound.mp3')
 
         this.controls.on = true
         window.gameControlsActive = true
@@ -267,6 +268,8 @@ export default class Ship
 
         this.socket.on('shellFired', (shellId, socketId) =>
         {
+            if(socketId == this.socket.id) this.shellSound.play()
+
             let shell = new THREE.Mesh(
                 new THREE.SphereGeometry(0.05, 8, 8),
                 new THREE.MeshBasicMaterial({ wireframe: false, color: '#ffffff' })
@@ -313,12 +316,16 @@ export default class Ship
             this.updatePersonalStats()
         })
 
-        this.socket.on('playerHit', (shellId, playerId, shipPart, ifHe) =>
+        this.socket.on('playerHit', (shellId, playerId, ifDead, damage) =>
         {
             if(this.shells[shellId] != undefined) this.shells[shellId].visible = false
             if(playerId == this.socket.id)
             {
                 this.updateHealthBar()
+            }
+            else
+            {
+                if(!ifDead) this.otherPlayers[playerId].shipGroup.visible = false
             }
         })
 
@@ -444,7 +451,7 @@ export default class Ship
             this.otherPlayers[id].shipGroup.position.z = this.otherPlayers[id].position.z
             this.otherPlayers[id].shipGroup.rotation.y = -this.otherPlayers[id].angle
 
-            this.otherPlayers[id].shipGroup.visible = this.otherPlayers[id].hp > 0
+            // this.otherPlayers[id].shipGroup.visible = this.otherPlayers[id].hp > 0
 
             if(this.otherPlayers[id].fire) this.otherPlayers[id].fire -= 0.083
         }

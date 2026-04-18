@@ -81,12 +81,11 @@ const serveStatic = (response, cache, absPath) => {
 let players = {}
 const scene = new THREE.Scene()
 
-// CHANGED: Helper to compute leaderboard (top 10)
 const getLeaderboard = () => {
     const entries = []
     for (const id in players) {
         const p = players[id]
-        if (!p.alive) continue // only alive players
+        if (!p.alive) continue 
         const timeAlive = (Date.now() - p.spawnTime) / 1000
         entries.push({
             id,
@@ -96,7 +95,6 @@ const getLeaderboard = () => {
             timeAlive
         })
     }
-    // sort: kills desc, damage desc, timeAlive desc
     entries.sort((a, b) => {
         if (a.kills !== b.kills) return b.kills - a.kills
         if (a.damage !== b.damage) return b.damage - a.damage
@@ -105,18 +103,15 @@ const getLeaderboard = () => {
     return entries.slice(0, 10)
 }
 
-// CHANGED: Broadcast leaderboard to all clients
 const broadcastLeaderboard = () => {
     io.emit('leaderboard', getLeaderboard())
 }
 
-// CHANGED: Upgrade stat multipliers
 const getUpgradeMultiplier = (level, base = 1, increment = 0.1) => {
     return base + level * increment
 }
 
 io.on('connection', (socket) => {
-    // CHANGED: Receive username from client
     let username = 'Anonymous'
     socket.on('setUsername', (name) => {
         username = name || 'Anonymous'
@@ -135,13 +130,13 @@ io.on('connection', (socket) => {
         'initialData', 
         players
     )
-    broadcastLeaderboard() // CHANGED: send initial leaderboard
+    broadcastLeaderboard() /
 
     socket.on('disconnect', () => {
         const playerId = socket.id
         delete players[playerId]
         io.emit('player disconnect', playerId)
-        broadcastLeaderboard() // CHANGED
+        broadcastLeaderboard() 
     })
 
     socket.on('keydown', (obj) =>
@@ -218,7 +213,7 @@ io.on('connection', (socket) => {
     socket.on('respawn', (id) =>
     {
         if (!players[id]) return
-        players[id].hp = 100 + players[id].upgrades.health * 10 // CHANGED: apply health upgrade
+        players[id].hp = 100 + players[id].upgrades.health * 10 
         players[id].maxHp = players[id].hp
         players[id].alive = true
         players[id].rudderAngle = 0
@@ -226,11 +221,11 @@ io.on('connection', (socket) => {
         players[id].angle = 0
         players[id].position.x = Math.random() * 20
         players[id].position.z = Math.random() * 20
-        players[id].damageDealt = 0 // CHANGED: reset damage on respawn
-        players[id].kills = 0        // CHANGED: reset kills on respawn
-        players[id].spawnTime = Date.now() // CHANGED
+        players[id].damageDealt = 0 
+        players[id].kills = 0        
+        players[id].spawnTime = Date.now() 
         io.emit('respawnFromServer', id)
-        broadcastLeaderboard() // CHANGED
+        broadcastLeaderboard() 
     })
 
     socket.on('toHe', (id) =>
@@ -254,7 +249,6 @@ io.on('connection', (socket) => {
         }, 4000)
     })
 
-    // CHANGED: Chat message handling
     socket.on('chatMessage', (message) => {
         if (!players[socket.id]) return
         const sender = players[socket.id].username
@@ -263,7 +257,6 @@ io.on('connection', (socket) => {
         io.emit('chatMessage', { sender, message, isTop })
     })
 
-    // CHANGED: Upgrade request
     socket.on('upgrade', (stat) => {
         const player = players[socket.id]
         if (!player) return
@@ -275,7 +268,6 @@ io.on('connection', (socket) => {
         player.coins -= 50
         player.upgrades[stat]++
 
-        // Apply health upgrade immediately
         if (stat === 'health') {
             const newMax = 100 + player.upgrades.health * 10
             const diff = newMax - player.maxHp
@@ -283,7 +275,6 @@ io.on('connection', (socket) => {
             player.hp = Math.min(player.hp + diff, newMax)
         }
 
-        // Send updated player data to client
         socket.emit('upgradeResult', { 
             success: true, 
             stat, 
@@ -327,7 +318,6 @@ const serverTick = () =>
     {
         if (!players[id]) continue
         const p = players[id]
-        // CHANGED: Apply upgrade multipliers to movement
         const speedMultiplier = getUpgradeMultiplier(p.upgrades.speed, 1, 0.1)
         const turnMultiplier = getUpgradeMultiplier(p.upgrades.turnSpeed, 1, 0.1)
         const accelMultiplier = getUpgradeMultiplier(p.upgrades.acceleration, 1, 0.1)
@@ -444,14 +434,15 @@ const serverTick = () =>
                     }
 
                 if (rawDamage > 0 && p && target.alive) {
-                    // CHANGED: Cap damage to remaining HP
+                    
                     const actualDamage = Math.min(rawDamage, target.hp)
                     target.hp -= actualDamage
                     p.damageDealt += actualDamage
-                    io.emit('playerHit', id, ID, option, p.he)
+                    const ifDead = target.hp > 0
+                    io.emit('playerHit', id, ID, ifDead, Math.min(rawDamage, target.hp))
                 }
 
-                // FIXED: Only process kill once when HP drops to 0 and player was alive
+                
                 if(target.alive && target.hp <= 0)
                 {
                      target.speed = 0
@@ -462,7 +453,7 @@ const serverTick = () =>
                      
                      if (p) {
                         p.kills ++
-                        p.coins += 100 // CHANGED: earn coins per kill
+                        p.coins += 100 
                         const killerName = p.username
                         const victimName = target.username
                         io.emit('killFeed', { killer: killerName, victim: victimName })
