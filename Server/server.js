@@ -284,6 +284,12 @@ io.on('connection', (socket) => {
             maxHp: player.maxHp
         })
     })
+
+    socket.on('turretRotation', (rotationY) =>
+    {
+        socket.emit('turretRotate', rotationY, socket.id)
+    }
+    )
 })
 
 const countShellYAngle = (absoluteRotationY, rayIntersectOcean, shell) =>

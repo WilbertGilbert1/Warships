@@ -66,5 +66,7 @@ export default class OtherPlayer
         }
         this.hp = 100
         this.loaded = false
+        this.fire = false
+        this.turret = new THREE.Group()
     }
 }

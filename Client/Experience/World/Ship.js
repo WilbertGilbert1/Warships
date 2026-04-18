@@ -76,15 +76,23 @@ export default class Ship
         playerNameDisplay.textContent = username
         this.socket.emit('setUsername', username)
 
+        this.turret = new THREE.Group()
         this.gltfLoader.load(
         '/Experience/Models/ship.glb',
         (gltf) =>
         {
-            while(gltf.scene.children.length)
+            const children = [...gltf.scene.children]
+            console.log(children)
+            for(const child of children)
             {
-                gltf.scene.children[0].position.x += 0.45
-                this.shipGroup.add(gltf.scene.children[0])
+                child.position.x += 0.45
+                if(child == children[1] || child == children[2]) 
+                    {
+                        this.turret.add(child) 
+                    }
+                else this.shipGroup.add(child)
             }
+            this.shipGroup.add(this.turret)
         }
         )
 
@@ -170,11 +178,17 @@ export default class Ship
                     '/Experience/Models/ship.glb',
                     (gltf) =>
                     {
-                        while(gltf.scene.children.length)
+                        const children = [...gltf.scene.children]
+                        for(const child of children)
                         {
-                            gltf.scene.children[0].position.x += 0.45
-                            this.otherPlayers[id].shipGroup.add(gltf.scene.children[0])
+                            child.position.x += 0.45
+                            if(child == children[1] || child == children[2]) 
+                                {
+                                    this.otherPlayers[id].turret.add(child) 
+                                }
+                            else this.otherPlayers[id].shipGroup.add(child)
                         }
+                        this.otherPlayers[id].shipGroup.add(this.turret)
                     }
                     )
                     this.scene.add(this.otherPlayers[id].shipGroup)   
@@ -258,11 +272,7 @@ export default class Ship
             {
                 this.ifShell = true
                 crosshair.style.backgroundColor = 'red'
-                let worldQuaternion = new THREE.Quaternion()
-                this.camera.getWorldQuaternion(worldQuaternion)
-                let worldEuler = new THREE.Euler().setFromQuaternion(worldQuaternion, 'YXZ')
-                let absoluteRotationY = worldEuler.y + Math.PI
-                this.socket.emit('click', event, absoluteRotationY, this.rayIntersectOcean)
+                this.socket.emit('click', event, this.absoluteRotationY, this.rayIntersectOcean)
             }
         })
 
@@ -443,6 +453,23 @@ export default class Ship
         delete this.shells[shellId]
     }
 
+    countShellYAngle = (rayIntersectOcean) =>
+    {
+        if(rayIntersectOcean != null && rayIntersectOcean[0] != undefined)
+        {
+        let rayIntersectOceanHorizontal = rayIntersectOcean[0].distance
+        let k = rayIntersectOceanHorizontal**2 - 1.5**2
+        let x =  0.14 * 100**2 / (9.8 * Math.sqrt(k)) - 0.14 * 100**2 / 9.8 * Math.sqrt((1+2*9.8*1.5/0.14 * 100**2)/k - 9.8**2/0.14 * 100**4)
+        if(!Number.isNaN(Math.atan(x))) return Math.atan(x)
+        else if( k == 0) return -Math.PI / 2
+        else return Math.PI / 4
+        }
+        else
+        {
+            return Math.PI / 4
+        }
+    }
+
     update = () =>
     {
         for(let id in this.otherPlayers)
@@ -461,10 +488,28 @@ export default class Ship
 
         this.raycaster.setFromCamera(this.mouse, this.camera)
         this.rayIntersectOcean = this.raycaster.intersectObject(this.world.ocean.ocean)
+        console.log(this.rayIntersectOcean)
 
+        this.worldQuaternion = new THREE.Quaternion()
+        this.camera.getWorldQuaternion(this.worldQuaternion)
+        this.worldEuler = new THREE.Euler().setFromQuaternion(this.worldQuaternion, 'YXZ')
+        this.absoluteRotationY = this.worldEuler.y + Math.PI
+        // if(this.rayIntersectOcean[0] != null && this.rayIntersectOcean[0] != undefined) this.turret.lookAt(this.rayIntersectOcean[0].point)
+        this.turret.rotation.y = this.absoluteRotationY - Math.PI/2
+        // if (this.turret.children.length > 0) {
+        //     this.turret.children[0].rotation.z = this.countShellYAngle(this.rayIntersectOcean)
+        //      this.turret.children[1].rotation.z = this.countShellYAngle(this.rayIntersectOcean)
+        // }
         mapPointer.style.top = 50 - (this.shipGroup.position.x)  -  parseFloat(window.getComputedStyle(mapPointer).height)/(2*window.innerWidth*0.18)*100+ "%"
         mapPointer.style.left = 50 + (this.shipGroup.position.z)  -  parseFloat(window.getComputedStyle(mapPointer).width)/(2*window.innerWidth*0.18)*100+ "%"
         mapPointer.style.transform = `rotate(${-this.shipGroup.rotation.y / (2*Math.PI) * 360 }deg)`
+
+        this.socket.emit('emitTurretRotation', (this.turret.rotation.y))
+
+        this.socket.on('turretRotate', (rY, id) =>
+        {
+            this.otherPlayers[id].turret.rotation.y = rY
+        })
 
         if(this.hp <= 0)
         {

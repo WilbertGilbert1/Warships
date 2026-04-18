@@ -19,8 +19,8 @@ export default class Experience
         instance = this
 
         //Server
-        // this.socket = io('http://localhost:3000')
-        this.socket = io('http://10.1.101.82:3000/')
+        this.socket = io('http://localhost:3000')
+        // this.socket = io('http://10.1.101.82:3000/')
        
         // Fields
         this.shipGroup = new THREE.Group()
