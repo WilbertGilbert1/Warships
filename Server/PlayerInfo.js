@@ -38,6 +38,7 @@ export default class PlayerInfo
             speedZ: 0,
             hitPlayer: false,
             velocity: new THREE.Vector3(0, 0, 0),
+            height: 0.3
         }
         this.rudderAngle = 0
         this.hp = 100
@@ -65,5 +66,6 @@ export default class PlayerInfo
             heDamage: 0,        // max 8
             health: 0           // max 8
         }
+
     }
 }

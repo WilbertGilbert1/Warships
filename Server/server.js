@@ -189,7 +189,7 @@ io.on('connection', (socket) => {
                         players[socket.id].shell.ifShell = false
                         players[socket.id].shell.position.x = players[socket.id].position.x
                         players[socket.id].shell.position.z = players[socket.id].position.z
-                        players[socket.id].shell.position.y = 1.5
+                        players[socket.id].shell.position.y = players[socket.id].shell.height
                         players[socket.id].shell.angleY = 0
                         players[socket.id].shell.angleXZ = 0
                         players[socket.id].shell.hitPlayer = false
@@ -199,7 +199,7 @@ io.on('connection', (socket) => {
             players[socket.id].shell.hitPlayer = false
             players[socket.id].shell.position.x = players[socket.id].position.x
             players[socket.id].shell.position.z = players[socket.id].position.z
-            players[socket.id].shell.position.y = 1.5
+            players[socket.id].shell.position.y = players[socket.id].shell.height
             players[socket.id].shell.angleY = countShellYAngle(absoluteRotationY, rayIntersectOcean, players[socket.id].shell)
             players[socket.id].shell.angleXZ = absoluteRotationY
             players[socket.id].shell.speedY =  players[socket.id].shell.speed * Math.sin(players[socket.id].shell.angleY)
@@ -287,7 +287,7 @@ io.on('connection', (socket) => {
 
     socket.on('turretRotation', (rotationY) =>
     {
-        socket.emit('turretRotate', rotationY, socket.id)
+        io.emit('turretRotate', rotationY, socket.id)
     }
     )
 })
@@ -296,9 +296,9 @@ const countShellYAngle = (absoluteRotationY, rayIntersectOcean, shell) =>
 {
     if(rayIntersectOcean != null && rayIntersectOcean[0] != undefined)
     {
-    let rayIntersectOceanHorizontal = rayIntersectOcean[0].distance
-    let k = rayIntersectOceanHorizontal**2 - 1.5**2
-    let x =  shell.speed**2 / (9.8 * Math.sqrt(k)) - shell.speed**2 / 9.8 * Math.sqrt((1+2*9.8*1.5/shell.speed**2)/k - 9.8**2/shell.speed**4)
+    let rayIntersectOceanHorizontal = Math.sqrt(rayIntersectOcean[0].distance**2+0.3**2-1.5**2)
+    let k = rayIntersectOceanHorizontal**2 - shell.height**2
+    let x =  shell.speed**2 / (9.8 * Math.sqrt(k)) - shell.speed**2 / 9.8 * Math.sqrt((1+2*9.8*shell.height/shell.speed**2)/k - 9.8**2/shell.speed**4)
     if(!Number.isNaN(Math.atan(x))) return Math.atan(x)
     else if( k == 0) return -Math.PI / 2
     else return Math.PI / 4
@@ -334,7 +334,7 @@ const serverTick = () =>
         }
         if(p.keys.s)
         {
-            p.speed -= 0.4*(0.14 * 5  - p.speed)*(1-2.72**(-0.015*8.14)) * 0.02 * accelMultiplier
+            p.speed -= 0.4*(0.14 * 5  + p.speed)*(1-2.72**(-0.015*8.14)) * 0.02 * accelMultiplier
         } 
         if(p.keys.a && p.rudderAngle > -0.005)
         {

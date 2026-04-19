@@ -188,7 +188,7 @@ export default class Ship
                                 }
                             else this.otherPlayers[id].shipGroup.add(child)
                         }
-                        this.otherPlayers[id].shipGroup.add(this.turret)
+                        this.otherPlayers[id].shipGroup.add(this.otherPlayers[id].turret)
                     }
                     )
                     this.scene.add(this.otherPlayers[id].shipGroup)   
@@ -494,21 +494,17 @@ export default class Ship
         this.camera.getWorldQuaternion(this.worldQuaternion)
         this.worldEuler = new THREE.Euler().setFromQuaternion(this.worldQuaternion, 'YXZ')
         this.absoluteRotationY = this.worldEuler.y + Math.PI
-        // if(this.rayIntersectOcean[0] != null && this.rayIntersectOcean[0] != undefined) this.turret.lookAt(this.rayIntersectOcean[0].point)
-        this.turret.rotation.y = this.absoluteRotationY - Math.PI/2
-        // if (this.turret.children.length > 0) {
-        //     this.turret.children[0].rotation.z = this.countShellYAngle(this.rayIntersectOcean)
-        //      this.turret.children[1].rotation.z = this.countShellYAngle(this.rayIntersectOcean)
-        // }
+        this.turret.rotation.y = this.absoluteRotationY - Math.PI/2 - this.shipGroup.rotation.y
+        
         mapPointer.style.top = 50 - (this.shipGroup.position.x)  -  parseFloat(window.getComputedStyle(mapPointer).height)/(2*window.innerWidth*0.18)*100+ "%"
         mapPointer.style.left = 50 + (this.shipGroup.position.z)  -  parseFloat(window.getComputedStyle(mapPointer).width)/(2*window.innerWidth*0.18)*100+ "%"
         mapPointer.style.transform = `rotate(${-this.shipGroup.rotation.y / (2*Math.PI) * 360 }deg)`
 
-        this.socket.emit('emitTurretRotation', (this.turret.rotation.y))
+        this.socket.emit('turretRotation', (this.turret.rotation.y))
 
         this.socket.on('turretRotate', (rY, id) =>
         {
-            this.otherPlayers[id].turret.rotation.y = rY
+            if(rY !== undefined && id !== this.socket.id && this.otherPlayers[id] && this.otherPlayers[id].turret) this.otherPlayers[id].turret.rotation.y = rY
         })
 
         if(this.hp <= 0)
